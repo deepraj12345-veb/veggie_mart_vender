@@ -1,0 +1,194 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../consts/app_colors.dart';
+import '../consts/app_text_styles.dart';
+import '../models/product_model.dart';
+import '../providers/inventory_provider.dart';
+import 'reusable_card.dart';
+
+class InventoryItemCard extends ConsumerStatefulWidget {
+  final ProductModel product;
+
+  const InventoryItemCard({super.key, required this.product});
+
+  @override
+  ConsumerState<InventoryItemCard> createState() => _InventoryItemCardState();
+}
+
+class _InventoryItemCardState extends ConsumerState<InventoryItemCard> {
+  late TextEditingController _priceController;
+  bool _isEditing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _priceController = TextEditingController(text: widget.product.price.toInt().toString());
+  }
+
+  @override
+  void didUpdateWidget(covariant InventoryItemCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.product.price.isAtSameMomentAs(widget.product.price)) {
+      _priceController.text = widget.product.price.toInt().toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _priceController.dispose();
+    super.dispose();
+  }
+
+  void _savePrice() {
+    final newPrice = double.tryParse(_priceController.text) ?? widget.product.price;
+    ref.read(inventoryProvider.notifier).updatePrice(widget.product.id, newPrice);
+    setState(() {
+      _isEditing = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Price updated to ₹${newPrice.toInt()}/Kg for ${widget.product.name}"),
+        duration: const Duration(seconds: 1),
+        backgroundColor: AppColors.primaryDark,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final product = widget.product;
+
+    return ReusableCard(
+      backgroundColor: product.inStock ? AppColors.surface : AppColors.background,
+      borderColor: product.inStock ? AppColors.border : AppColors.errorLight,
+      child: Row(
+        children: [
+          // Product Emoji / Icon
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: product.inStock ? AppColors.primaryLight : AppColors.errorLight,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              product.imageUrl,
+              style: const TextStyle(fontSize: 24),
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // Name & Category
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  style: AppTextStyles.heading3.copyWith(
+                    decoration: product.inStock ? null : TextDecoration.lineThrough,
+                    color: product.inStock ? AppColors.textPrimary : AppColors.textLight,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.divider,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(product.category, style: AppTextStyles.badgeText.copyWith(color: AppColors.textSecondary, fontSize: 10)),
+                    ),
+                    if (!product.inStock)
+                      Text("Out of Stock", style: AppTextStyles.badgeText.copyWith(color: AppColors.error, fontSize: 10)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+
+          // Editable Price Section
+          if (_isEditing)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 52,
+                  height: 32,
+                  child: TextField(
+                    controller: _priceController,
+                    keyboardType: TextInputType.number,
+                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                    decoration: const InputDecoration(
+                      contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      prefixText: "₹",
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: _savePrice,
+                ),
+              ],
+            )
+          else
+            InkWell(
+              onTap: () => setState(() => _isEditing = true),
+              borderRadius: BorderRadius.circular(6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "₹${product.price.toInt()}",
+                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primaryDark, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(width: 3),
+                    const Icon(Icons.edit, size: 11, color: AppColors.primaryDark),
+                  ],
+                ),
+              ),
+            ),
+          const SizedBox(width: 6),
+
+          // In-Stock / Out-of-Stock Toggle Switch
+          SizedBox(
+            height: 24,
+            child: Transform.scale(
+              scale: 0.7,
+              child: Switch(
+                value: product.inStock,
+                activeThumbColor: AppColors.success,
+                inactiveThumbColor: AppColors.error,
+                onChanged: (val) {
+                  ref.read(inventoryProvider.notifier).toggleStock(product.id);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+extension on double {
+  bool isAtSameMomentAs(double price) => this == price;
+}
