@@ -183,6 +183,37 @@ class _InventoryItemCardState extends ConsumerState<InventoryItemCard> {
               ),
             ),
           ),
+          const SizedBox(width: 4),
+
+          // Delete Button
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text("Delete Product"),
+                  content: Text("Are you sure you want to remove ${product.name} from your catalog?"),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                      onPressed: () {
+                        ref.read(inventoryProvider.notifier).removeProduct(product.id);
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("${product.name} removed from catalog"), backgroundColor: AppColors.error),
+                        );
+                      },
+                      child: const Text("Delete"),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

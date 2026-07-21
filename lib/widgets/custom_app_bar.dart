@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../consts/app_colors.dart';
 import '../consts/app_text_styles.dart';
 import '../providers/store_provider.dart';
+import '../screens/dashboard/notifications_screen.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
@@ -104,6 +105,36 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ],
             ),
           ),
+        
+        // Notifications Icon
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined, color: AppColors.textPrimary),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                );
+              },
+            ),
+            Positioned(
+              right: 12,
+              top: 12,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: AppColors.error,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 8),
+
         ...?actions,
       ],
     );

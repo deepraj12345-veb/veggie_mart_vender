@@ -7,6 +7,8 @@ import '../../widgets/custom_app_bar.dart';
 import '../../widgets/reusable_card.dart';
 import '../../widgets/custom_button.dart';
 import '../auth/login_screen.dart';
+import 'edit_profile_modal.dart';
+import 'help_support_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -81,9 +83,7 @@ class ProfileScreen extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(Icons.edit, size: 18, color: AppColors.textSecondary),
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Edit store address modal coming soon!")),
-                      );
+                      EditProfileModal.show(context, ref);
                     },
                   ),
                 ],
@@ -131,8 +131,9 @@ class ProfileScreen extends ConsumerWidget {
             // Help & Support / Contact Admin
             ReusableCard(
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Connecting to Veggie Mart Support Desk...")),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HelpSupportScreen()),
                 );
               },
               child: Row(

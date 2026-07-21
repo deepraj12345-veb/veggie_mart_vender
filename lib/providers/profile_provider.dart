@@ -51,6 +51,20 @@ class ProfileNotifier extends Notifier<VendorProfileState> {
   void updateLanguage(String lang) {
     state = state.copyWith(language: lang);
   }
+
+  void updateProfile({
+    String? vendorName,
+    String? phoneNumber,
+    String? storeName,
+    String? storeAddress,
+  }) {
+    state = state.copyWith(
+      vendorName: vendorName,
+      phoneNumber: phoneNumber,
+      storeName: storeName,
+      storeAddress: storeAddress,
+    );
+  }
 }
 
 final profileProvider = NotifierProvider<ProfileNotifier, VendorProfileState>(ProfileNotifier.new);
