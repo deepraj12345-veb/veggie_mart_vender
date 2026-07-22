@@ -7,24 +7,36 @@ import '../../widgets/custom_app_bar.dart';
 import '../../widgets/stat_summary_card.dart';
 import '../../widgets/reusable_card.dart';
 import '../../widgets/custom_button.dart';
+import 'bank_details_modal.dart';
 
 class WalletScreen extends ConsumerWidget {
   const WalletScreen({super.key});
 
-  void _showWithdrawDialog(BuildContext context, WidgetRef ref, double availableBalance) {
-    final amountController = TextEditingController(text: availableBalance.toInt().toString());
+  void _showWithdrawDialog(
+    BuildContext context,
+    WidgetRef ref,
+    double availableBalance,
+  ) {  
+    final amountController = TextEditingController(
+      text: availableBalance.toInt().toString(),
+    );
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           title: Text("Withdraw to Bank", style: AppTextStyles.heading1),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Transfer instant earnings to your registered bank account.", style: AppTextStyles.bodyMedium),
+                Text(
+                  "Transfer instant earnings to your registered bank account.",
+                  style: AppTextStyles.bodyMedium,
+                ),
                 const SizedBox(height: 14),
                 TextField(
                   controller: amountController,
@@ -37,7 +49,9 @@ class WalletScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(
                   "Available: ₹${availableBalance.toInt()}",
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -49,26 +63,35 @@ class WalletScreen extends ConsumerWidget {
             ),
             ElevatedButton(
               onPressed: () {
-                final amount = double.tryParse(amountController.text.trim()) ?? 0;
-                final success = ref.read(walletProvider.notifier).withdrawToBank(amount);
+                final amount =
+                    double.tryParse(amountController.text.trim()) ?? 0;
+                final success = ref
+                    .read(walletProvider.notifier)
+                    .withdrawToBank(amount);
                 Navigator.pop(context);
                 if (success) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text("🎉 ₹${amount.toInt()} withdrawal request submitted! Money will reach your bank shortly."),
+                      content: Text(
+                        "🎉 ₹${amount.toInt()} withdrawal request submitted! Money will reach your bank shortly.",
+                      ),
                       backgroundColor: AppColors.success,
                     ),
                   );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text("❌ Invalid amount or insufficient balance."),
+                      content: Text(
+                        "❌ Invalid amount or insufficient balance.",
+                      ),
                       backgroundColor: AppColors.error,
                     ),
                   );
                 }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+              ),
               child: const Text("Confirm Transfer"),
             ),
           ],
@@ -117,17 +140,35 @@ class WalletScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
+            // Manage Bank Details Button
+            CustomButton(
+              label: "Manage Bank Account",
+              textColor: Colors.black,
+              onPressed: () => BankDetailsModal.show(context),
+              icon: Icons.account_balance,
+              height: 48,
+              isOutlined: true,
+            ),
+            const SizedBox(height: 12),
+
             // "Withdraw to Bank" Button
             CustomButton(
               label: "Withdraw to Bank Account",
-              onPressed: () => _showWithdrawDialog(context, ref, walletState.availableBalance),
-              icon: Icons.account_balance,
+              onPressed: () => _showWithdrawDialog(
+                context,
+                ref,
+                walletState.availableBalance,
+              ),
+              icon: Icons.payments,
               height: 48,
             ),
             const SizedBox(height: 24),
 
             // Bottom Section (Transaction History)
-            Text("Completed Orders Earning History", style: AppTextStyles.heading1),
+            Text(
+              "Completed Orders Earning History",
+              style: AppTextStyles.heading1,
+            ),
             const SizedBox(height: 12),
 
             ListView.builder(
@@ -149,7 +190,11 @@ class WalletScreen extends ConsumerWidget {
                                 color: AppColors.primaryLight,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                              child: const Icon(
+                                Icons.check_circle,
+                                color: AppColors.success,
+                                size: 20,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -178,7 +223,9 @@ class WalletScreen extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Text(
                         "+ ₹${txn.amount.toInt()}",
-                        style: AppTextStyles.amountText.copyWith(color: AppColors.success),
+                        style: AppTextStyles.amountText.copyWith(
+                          color: AppColors.success,
+                        ),
                       ),
                     ],
                   ),

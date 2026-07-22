@@ -4,6 +4,7 @@ import '../consts/app_colors.dart';
 import '../consts/app_text_styles.dart';
 import '../models/product_model.dart';
 import '../providers/inventory_provider.dart';
+import '../screens/inventory/edit_product_modal.dart';
 import 'reusable_card.dart';
 
 class InventoryItemCard extends ConsumerStatefulWidget {
@@ -79,7 +80,7 @@ class _InventoryItemCardState extends ConsumerState<InventoryItemCard> {
           ),
           const SizedBox(width: 10),
 
-          // Name & Category
+          // Name, Category & Price
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,7 +94,7 @@ class _InventoryItemCardState extends ConsumerState<InventoryItemCard> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
                   runSpacing: 4,
@@ -111,108 +112,131 @@ class _InventoryItemCardState extends ConsumerState<InventoryItemCard> {
                       Text("Out of Stock", style: AppTextStyles.badgeText.copyWith(color: AppColors.error, fontSize: 10)),
                   ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 6),
-
-          // Editable Price Section
-          if (_isEditing)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 52,
-                  height: 32,
-                  child: TextField(
-                    controller: _priceController,
-                    keyboardType: TextInputType.number,
-                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-                    decoration: const InputDecoration(
-                      contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                      prefixText: "₹",
+                const SizedBox(height: 10),
+                
+                // Editable Price Section
+                if (_isEditing)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 60,
+                        height: 32,
+                        child: TextField(
+                          controller: _priceController,
+                          keyboardType: TextInputType.number,
+                          style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                          decoration: const InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            prefixText: "₹",
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        icon: const Icon(Icons.check_circle, color: AppColors.success, size: 24),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: _savePrice,
+                      ),
+                    ],
+                  )
+                else
+                  InkWell(
+                    onTap: () => setState(() => _isEditing = true),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "₹${product.price.toInt()}",
+                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primaryDark, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.edit, size: 12, color: AppColors.primaryDark),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.check_circle, color: AppColors.success, size: 20),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: _savePrice,
-                ),
               ],
-            )
-          else
-            InkWell(
-              onTap: () => setState(() => _isEditing = true),
-              borderRadius: BorderRadius.circular(6),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "₹${product.price.toInt()}",
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primaryDark, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(width: 3),
-                    const Icon(Icons.edit, size: 11, color: AppColors.primaryDark),
-                  ],
-                ),
-              ),
-            ),
-          const SizedBox(width: 6),
-
-          // In-Stock / Out-of-Stock Toggle Switch
-          SizedBox(
-            height: 24,
-            child: Transform.scale(
-              scale: 0.7,
-              child: Switch(
-                value: product.inStock,
-                activeThumbColor: AppColors.success,
-                inactiveThumbColor: AppColors.error,
-                onChanged: (val) {
-                  ref.read(inventoryProvider.notifier).toggleStock(product.id);
-                },
-              ),
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
 
-          // Delete Button
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text("Delete Product"),
-                  content: Text("Are you sure you want to remove ${product.name} from your catalog?"),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-                      onPressed: () {
-                        ref.read(inventoryProvider.notifier).removeProduct(product.id);
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("${product.name} removed from catalog"), backgroundColor: AppColors.error),
-                        );
-                      },
-                      child: const Text("Delete"),
-                    ),
-                  ],
+          // Actions Right Side
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // In-Stock / Out-of-Stock Toggle Switch
+              SizedBox(
+                height: 28,
+                child: Transform.scale(
+                  scale: 0.8,
+                  alignment: Alignment.centerRight,
+                  child: Switch(
+                    value: product.inStock,
+                    activeThumbColor: AppColors.success,
+                    inactiveThumbColor: AppColors.error,
+                    onChanged: (val) {
+                      ref.read(inventoryProvider.notifier).toggleStock(product.id);
+                    },
+                  ),
                 ),
-              );
-            },
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Edit Details Button
+                  IconButton(
+                    icon: const Icon(Icons.edit_note, color: AppColors.primary, size: 24),
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      EditProductModal.show(context, ref, product);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  // Delete Button
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 22),
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text("Delete Product"),
+                          content: Text("Are you sure you want to remove ${product.name} from your catalog?"),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                              onPressed: () {
+                                ref.read(inventoryProvider.notifier).removeProduct(product.id);
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text("${product.name} removed from catalog"), backgroundColor: AppColors.error),
+                                );
+                              },
+                              child: const Text("Delete"),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),

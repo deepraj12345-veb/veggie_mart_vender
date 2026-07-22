@@ -34,7 +34,11 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
               color: AppColors.primaryLight,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.storefront, color: AppColors.primary, size: 20),
+            child: const Icon(
+              Icons.storefront,
+              color: AppColors.primary,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -49,52 +53,60 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
       actions: [
         if (showOpenCloseToggle)
           Container(
-            margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            margin: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             decoration: BoxDecoration(
-              color: isStoreOpen ? AppColors.successLight : AppColors.errorLight,
+              color: isStoreOpen
+                  ? AppColors.successLight
+                  : AppColors.errorLight,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isStoreOpen ? AppColors.success : AppColors.error,
+                color: isStoreOpen
+                    ? AppColors.success.withOpacity(0.4)
+                    : AppColors.error.withOpacity(0.4),
                 width: 1,
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: isStoreOpen ? AppColors.success : AppColors.error,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Text(
-                  isStoreOpen ? "Open" : "Closed",
-                  style: AppTextStyles.badgeText.copyWith(
-                    color: isStoreOpen ? AppColors.primaryDark : AppColors.error,
+                  isStoreOpen ? "Online" : "Offline",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isStoreOpen
+                        ? AppColors.primaryDark
+                        : AppColors.error,
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 2),
                 SizedBox(
+                  width: 38,
                   height: 24,
                   child: Transform.scale(
-                    scale: 0.7,
+                    scale: 0.65,
                     child: Switch(
                       value: isStoreOpen,
                       activeThumbColor: AppColors.success,
                       inactiveThumbColor: AppColors.error,
+                      inactiveTrackColor: AppColors.error.withOpacity(0.3),
                       onChanged: (val) {
                         ref.read(storeStatusProvider.notifier).toggleStatus();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              val ? "🟢 Store is now OPEN for new orders!" : "🔴 Store is CLOSED. No new orders will arrive.",
-                              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white),
+                              val
+                                  ? "🟢 Store is now ONLINE for new orders!"
+                                  : "🔴 Store is OFFLINE. No new orders will arrive.",
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.white,
+                              ),
                             ),
-                            backgroundColor: val ? AppColors.primaryDark : AppColors.error,
+                            backgroundColor: val
+                                ? AppColors.primaryDark
+                                : AppColors.error,
                             duration: const Duration(seconds: 2),
                           ),
                         );
@@ -105,17 +117,22 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ],
             ),
           ),
-        
+
         // Notifications Icon
         Stack(
           alignment: Alignment.center,
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: AppColors.textPrimary),
+              icon: const Icon(
+                Icons.notifications_outlined,
+                color: AppColors.textPrimary,
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationsScreen(),
+                  ),
                 );
               },
             ),

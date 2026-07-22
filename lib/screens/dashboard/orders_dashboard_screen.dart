@@ -21,7 +21,7 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -105,38 +105,12 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
     final newOrders = ref.watch(newOrdersProvider);
     final prepOrders = ref.watch(preparingOrdersProvider);
     final readyOrders = ref.watch(readyOrdersProvider);
+    final completedOrders = ref.watch(completedOrdersProvider);
 
     return Scaffold(
-      appBar: CustomAppBar(
+      appBar: const CustomAppBar(
         title: "Live Orders",
         showOpenCloseToggle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_alert, color: AppColors.warning),
-            tooltip: "Simulate New Order Alert",
-            onPressed: () {
-              ref.read(ordersProvider.notifier).simulateNewOrder();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(Icons.notifications_active, color: AppColors.white),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          "🔔 LOUD ALERT: New Order Received! Check New tab.",
-                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                  backgroundColor: AppColors.warning,
-                  duration: const Duration(seconds: 3),
-                ),
-              );
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -150,10 +124,13 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
               labelColor: AppColors.primaryDark,
               unselectedLabelColor: AppColors.textSecondary,
               labelStyle: AppTextStyles.heading3,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
               tabs: [
                 Tab(text: "New (${newOrders.length})"),
                 Tab(text: "Preparing (${prepOrders.length})"),
                 Tab(text: "Ready (${readyOrders.length})"),
+                Tab(text: "Completed (${completedOrders.length})"),
               ],
             ),
           ),
@@ -164,6 +141,7 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
                 _buildOrderList(newOrders, "No new incoming orders right now."),
                 _buildOrderList(prepOrders, "No orders currently being prepared."),
                 _buildOrderList(readyOrders, "No packed orders waiting for pickup."),
+                _buildOrderList(completedOrders, "No completed orders yet.", isCompleted: true),
               ],
             ),
           ),
@@ -172,7 +150,7 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
     );
   }
 
-  Widget _buildOrderList(List<OrderModel> orders, String emptyMsg) {
+  Widget _buildOrderList(List<OrderModel> orders, String emptyMsg, {bool isCompleted = false}) {
     if (orders.isEmpty) {
       return Center(
         child: Column(
@@ -195,6 +173,7 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
           order: order,
           onViewDetails: () => OrderDetailsModal.show(context, order),
           onAccept: () {
+            if (isCompleted) return;
             ref.read(ordersProvider.notifier).acceptOrder(order.id);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -205,6 +184,7 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
             );
           },
           onReject: () {
+            if (isCompleted) return;
             ref.read(ordersProvider.notifier).rejectOrder(order.id);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -215,6 +195,7 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
             );
           },
           onMarkReady: () {
+            if (isCompleted) return;
             ref.read(ordersProvider.notifier).markAsReady(order.id);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -224,7 +205,10 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
               ),
             );
           },
-          onHandover: () => _showHandoverModal(order),
+          onHandover: () {
+            if (isCompleted) return;
+            _showHandoverModal(order);
+          },
         );
       },
     );

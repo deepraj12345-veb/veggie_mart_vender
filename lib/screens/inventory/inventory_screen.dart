@@ -78,7 +78,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 16), 
                   CustomButton(
                     label: "Save Item to Catalog",
                     onPressed: () {

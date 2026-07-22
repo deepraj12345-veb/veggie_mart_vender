@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'consts/app_theme.dart';
-import 'screens/auth/login_screen.dart';
+import 'screens/splash/splash_screen.dart';
 
 void main() {
   runApp(
@@ -20,7 +20,7 @@ class VeggieMartVendorApp extends StatelessWidget {
       title: 'Veggie Mart Vendor',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }

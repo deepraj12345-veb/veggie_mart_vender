@@ -27,6 +27,21 @@ class InventoryNotifier extends Notifier<List<ProductModel>> {
     ];
   }
 
+  // Update item details
+  void updateProductDetails(String productId, String newName, String newCategory, String newImageUrl) {
+    state = [
+      for (final product in state)
+        if (product.id == productId)
+          product.copyWith(
+            name: newName,
+            category: newCategory,
+            imageUrl: newImageUrl,
+          )
+        else
+          product
+    ];
+  }
+
   // Add new grocery product
   void addProduct(ProductModel newProduct) {
     state = [newProduct, ...state];

@@ -33,7 +33,10 @@ class CustomButton extends StatelessWidget {
           foregroundColor: textColor ?? AppColors.primary,
           minimumSize: Size(0, isDense ? 34 : height),
           padding: EdgeInsets.symmetric(horizontal: isDense ? 8 : 12),
-          side: BorderSide(color: backgroundColor ?? AppColors.primary, width: 1.5),
+          side: BorderSide(
+            color: backgroundColor ?? AppColors.primary,
+            width: 1.5,
+          ),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         child: _buildContent(),
@@ -60,13 +63,21 @@ class CustomButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 16, color: isOutlined ? (textColor ?? AppColors.primary) : (textColor ?? AppColors.white)),
+          Icon(
+            icon,
+            size: 16,
+            color: isOutlined
+                ? (textColor ?? AppColors.primary)
+                : (textColor ?? AppColors.white),
+          ),
           const SizedBox(width: 4),
           Flexible(
             child: Text(
               label,
               style: AppTextStyles.buttonText.copyWith(
-                color: isOutlined ? (textColor ?? AppColors.primary) : (textColor ?? AppColors.white),
+                color: isOutlined
+                    ? (textColor ?? AppColors.primary)
+                    : (textColor ?? AppColors.white),
                 fontSize: isDense ? 12 : 13,
               ),
               maxLines: 1,
@@ -81,7 +92,9 @@ class CustomButton extends StatelessWidget {
       child: Text(
         label,
         style: AppTextStyles.buttonText.copyWith(
-          color: isOutlined ? (textColor ?? AppColors.primary) : (textColor ?? AppColors.white),
+          color: isOutlined
+              ? (textColor ?? AppColors.primary)
+              : (textColor ?? AppColors.white),
           fontSize: isDense ? 12 : 13,
         ),
         maxLines: 1,
