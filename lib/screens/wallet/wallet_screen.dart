@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../consts/app_colors.dart';
 import '../../consts/app_text_styles.dart';
 import '../../providers/wallet_provider.dart';
+import '../../providers/localization_provider.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/stat_summary_card.dart';
 import '../../widgets/reusable_card.dart';
@@ -16,6 +17,7 @@ class WalletScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     double availableBalance,
+    String Function(String) tr,
   ) {  
     final amountController = TextEditingController(
       text: availableBalance.toInt().toString(),
@@ -27,28 +29,28 @@ class WalletScreen extends ConsumerWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          title: Text("Withdraw to Bank", style: AppTextStyles.heading1),
+          title: Text(tr("Withdraw to Bank"), style: AppTextStyles.heading1),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Transfer instant earnings to your registered bank account.",
+                  tr("Transfer instant earnings to your registered bank account."),
                   style: AppTextStyles.bodyMedium,
                 ),
                 const SizedBox(height: 14),
                 TextField(
                   controller: amountController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: "Amount to Withdraw (₹)",
+                  decoration: InputDecoration(
+                    labelText: tr("Amount to Withdraw (₹)"),
                     prefixText: "₹ ",
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Available: ₹${availableBalance.toInt()}",
+                  "${tr("Available Balance")}: ₹${availableBalance.toInt()}",
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -59,7 +61,7 @@ class WalletScreen extends ConsumerWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: Text(tr("Cancel")),
             ),
             ElevatedButton(
               onPressed: () {
@@ -92,7 +94,7 @@ class WalletScreen extends ConsumerWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
               ),
-              child: const Text("Confirm Transfer"),
+              child: Text(tr("Confirm Transfer")),
             ),
           ],
         );
@@ -103,10 +105,11 @@ class WalletScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final walletState = ref.watch(walletProvider);
+    final tr = ref.watch(translationProvider);
 
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: "Wallet & Earnings",
+      appBar: CustomAppBar(
+        title: tr("Wallet & Earnings"),
         showOpenCloseToggle: false,
       ),
       body: SingleChildScrollView(
@@ -119,7 +122,7 @@ class WalletScreen extends ConsumerWidget {
               children: [
                 Expanded(
                   child: StatSummaryCard(
-                    title: "Today's Earnings",
+                    title: tr("Today's Earnings"),
                     value: "₹${walletState.todayEarnings.toInt()}",
                     icon: Icons.trending_up,
                     iconColor: AppColors.success,
@@ -129,7 +132,7 @@ class WalletScreen extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: StatSummaryCard(
-                    title: "Available Balance",
+                    title: tr("Available Balance"),
                     value: "₹${walletState.availableBalance.toInt()}",
                     icon: Icons.account_balance_wallet,
                     iconColor: AppColors.primary,
@@ -142,7 +145,7 @@ class WalletScreen extends ConsumerWidget {
 
             // Manage Bank Details Button
             CustomButton(
-              label: "Manage Bank Account",
+              label: tr("Manage Bank Account"),
               textColor: Colors.black,
               onPressed: () => BankDetailsModal.show(context),
               icon: Icons.account_balance,
@@ -153,11 +156,12 @@ class WalletScreen extends ConsumerWidget {
 
             // "Withdraw to Bank" Button
             CustomButton(
-              label: "Withdraw to Bank Account",
+              label: tr("Withdraw to Bank Account"),
               onPressed: () => _showWithdrawDialog(
                 context,
                 ref,
                 walletState.availableBalance,
+                tr,
               ),
               icon: Icons.payments,
               height: 48,
@@ -166,7 +170,7 @@ class WalletScreen extends ConsumerWidget {
 
             // Bottom Section (Transaction History)
             Text(
-              "Completed Orders Earning History",
+              tr("Recent Transactions"),
               style: AppTextStyles.heading1,
             ),
             const SizedBox(height: 12),
@@ -202,7 +206,7 @@ class WalletScreen extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Order ${txn.orderId}",
+                                    "${tr("Order")} ${txn.orderId}",
                                     style: AppTextStyles.heading3,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,

@@ -3,14 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../consts/app_colors.dart';
 import '../../consts/app_text_styles.dart';
 import '../../models/product_model.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../../providers/inventory_provider.dart';
 import '../../widgets/custom_button.dart';
 
 class EditProductModal {
   static void show(BuildContext context, WidgetRef ref, ProductModel product) {
     final nameController = TextEditingController(text: product.name);
-    final emojiController = TextEditingController(text: product.imageUrl);
+    String? imagePath = product.imageUrl.length > 2 ? product.imageUrl : null;
     String selectedCategory = product.category;
+    final ImagePicker picker = ImagePicker();
 
     // Default categories if product category is not in list
     final categories = ["Vegetables", "Fruits", "Leafy", "Spices", "Dairy"];
@@ -44,27 +47,86 @@ class EditProductModal {
                     decoration: const InputDecoration(labelText: "Item Name"),
                   ),
                   const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedCategory,
+                    items: categories
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (val) => setModalState(() => selectedCategory = val!),
+                    decoration: const InputDecoration(labelText: "Category"),
+                  ),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
-                      Expanded(
-                        flex: 1,
-                        child: TextField(
-                          controller: emojiController,
-                          maxLength: 2,
-                          decoration: const InputDecoration(labelText: "Emoji", counterText: ""),
-                          textAlign: TextAlign.center,
+                      if (imagePath != null || (product.imageUrl.length <= 2 && product.imageUrl.isNotEmpty))
+                        Container(
+                          width: 50,
+                          height: 50,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: AppColors.primaryLight,
+                          ),
+                          alignment: Alignment.center,
+                          child: imagePath != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    File(imagePath!),
+                                    fit: BoxFit.cover,
+                                    width: 50,
+                                    height: 50,
+                                    errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+                                  ),
+                                )
+                              : Text(product.imageUrl, style: const TextStyle(fontSize: 24)),
                         ),
-                      ),
-                      const SizedBox(width: 12),
                       Expanded(
-                        flex: 3,
-                        child: DropdownButtonFormField<String>(
-                          value: selectedCategory,
-                          items: categories
-                              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                              .toList(),
-                          onChanged: (val) => setModalState(() => selectedCategory = val!),
-                          decoration: const InputDecoration(labelText: "Category"),
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final source = await showDialog<ImageSource>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text("Select Image Source"),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ListTile(
+                                      leading: const Icon(Icons.camera_alt),
+                                      title: const Text("Camera"),
+                                      onTap: () => Navigator.pop(context, ImageSource.camera),
+                                    ),
+                                    ListTile(
+                                      leading: const Icon(Icons.photo_library),
+                                      title: const Text("Gallery"),
+                                      onTap: () => Navigator.pop(context, ImageSource.gallery),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                            if (source != null) {
+                              try {
+                                final XFile? image = await picker.pickImage(source: source);
+                                if (image != null) {
+                                  setModalState(() {
+                                    imagePath = image.path;
+                                  });
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Error opening Camera/Gallery. Note: Camera is not supported on Windows desktop. Also try restarting the app."),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.image),
+                          label: const Text("Update Image"),
                         ),
                       ),
                     ],
@@ -78,7 +140,7 @@ class EditProductModal {
                               product.id,
                               nameController.text.trim(),
                               selectedCategory,
-                              emojiController.text.trim().isEmpty ? "🥦" : emojiController.text.trim(),
+                              imagePath ?? product.imageUrl,
                             );
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(

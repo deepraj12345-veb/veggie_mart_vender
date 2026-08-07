@@ -1,61 +1,176 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/product_model.dart';
+import '../services/api_service.dart';
 
-class InventoryNotifier extends Notifier<List<ProductModel>> {
+class InventoryNotifier extends AsyncNotifier<List<ProductModel>> {
   @override
-  List<ProductModel> build() => _initialProducts;
-
-  // Toggle item in-stock / out-of-stock
-  void toggleStock(String productId) {
-    state = [
-      for (final product in state)
-        if (product.id == productId)
-          product.copyWith(inStock: !product.inStock)
-        else
-          product
-    ];
+  Future<List<ProductModel>> build() async {
+    return _fetchProducts();
   }
 
-  // Update item price (editable price feature)
-  void updatePrice(String productId, double newPrice) {
-    state = [
-      for (final product in state)
-        if (product.id == productId)
-          product.copyWith(price: newPrice, unit: "Rs. ${newPrice.toInt()} / Kg")
-        else
-          product
-    ];
+  Future<List<ProductModel>> _fetchProducts() async {
+    try {
+      final products = await ApiService.fetchProducts();
+      return products;
+    } catch (e) {
+      print('Error fetching products from API: $e');
+      return [];
+    }
   }
 
-  // Update item details
-  void updateProductDetails(String productId, String newName, String newCategory, String newImageUrl) {
-    state = [
-      for (final product in state)
-        if (product.id == productId)
-          product.copyWith(
+  // Refresh products from server
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() => _fetchProducts());
+  }
+
+  // Toggle item in-stock / out-of-stock locally and via API
+  Future<void> toggleStock(String productId) async {
+    if (state.value == null) return;
+
+    final product = state.value!.firstWhere((p) => p.id == productId);
+    final newInStock = !product.inStock;
+
+    // Optimistic update
+    state = AsyncValue.data([
+      for (final p in state.value!)
+        if (p.id == productId) p.copyWith(inStock: newInStock) else p,
+    ]);
+
+    try {
+      await ApiService.updateProduct(productId, {
+        'stock_status': newInStock ? 'in_stock' : 'out_of_stock',
+      });
+    } catch (e) {
+      print('Error updating stock: $e');
+      // Revert optimistic update
+      if (state.value != null) {
+        state = AsyncValue.data([
+          for (final p in state.value!)
+            if (p.id == productId) p.copyWith(inStock: !newInStock) else p,
+        ]);
+      }
+    }
+  }
+
+  // Update item price locally and via API
+  Future<void> updatePrice(String productId, double newPrice) async {
+    if (state.value == null) return;
+
+    final product = state.value!.firstWhere((p) => p.id == productId);
+    final oldPrice = product.price;
+
+    state = AsyncValue.data([
+      for (final p in state.value!)
+        if (p.id == productId)
+          p.copyWith(price: newPrice, unit: "Rs. ${newPrice.toInt()} / Kg")
+        else
+          p,
+    ]);
+
+    try {
+      await ApiService.updateProduct(productId, {'selling_price': newPrice});
+    } catch (e) {
+      print('Error updating price: $e');
+      // Revert
+      if (state.value != null) {
+        state = AsyncValue.data([
+          for (final p in state.value!)
+            if (p.id == productId)
+              p.copyWith(price: oldPrice, unit: "Rs. ${oldPrice.toInt()} / Kg")
+            else
+              p,
+        ]);
+      }
+    }
+  }
+
+  // Update item details locally and via API
+  Future<void> updateProductDetails(
+    String productId,
+    String newName,
+    String newCategory,
+    String newImageUrl,
+  ) async {
+    if (state.value == null) return;
+
+    final product = state.value!.firstWhere((p) => p.id == productId);
+    final oldProduct = product;
+
+    state = AsyncValue.data([
+      for (final p in state.value!)
+        if (p.id == productId)
+          p.copyWith(
             name: newName,
             category: newCategory,
             imageUrl: newImageUrl,
           )
         else
-          product
-    ];
+          p,
+    ]);
+
+    try {
+      await ApiService.updateProduct(productId, {
+        'product_name': newName,
+        'category': newCategory,
+        'product_images': newImageUrl,
+      });
+    } catch (e) {
+      print('Error updating product details: $e');
+      // Revert
+      if (state.value != null) {
+        state = AsyncValue.data([
+          for (final p in state.value!)
+            if (p.id == productId) oldProduct else p,
+        ]);
+      }
+    }
   }
 
-  // Add new grocery product
-  void addProduct(ProductModel newProduct) {
-    state = [newProduct, ...state];
+  // Add new grocery product via API
+  Future<void> addProduct(ProductModel newProduct) async {
+    try {
+      final addedProduct = await ApiService.createProduct(newProduct);
+      if (state.value != null) {
+        state = AsyncValue.data([addedProduct, ...state.value!]);
+      }
+    } catch (e) {
+      print('Error adding product: $e');
+      // Fallback to local state update
+      if (state.value != null) {
+        state = AsyncValue.data([newProduct, ...state.value!]);
+      }
+    }
   }
 
-  // Remove grocery product
-  void removeProduct(String productId) {
-    state = state.where((p) => p.id != productId).toList();
+  // Remove grocery product locally and via API
+  Future<void> removeProduct(String productId) async {
+    if (state.value == null) return;
+
+    final productToRemove = state.value!.firstWhere((p) => p.id == productId);
+
+    state = AsyncValue.data(
+      state.value!.where((p) => p.id != productId).toList(),
+    );
+
+    try {
+      await ApiService.deleteProduct(productId);
+    } catch (e) {
+      print('Error deleting product: $e');
+      // Revert
+      if (state.value != null) {
+        state = AsyncValue.data([...state.value!, productToRemove]);
+      }
+    }
   }
 }
 
-final inventoryProvider = NotifierProvider<InventoryNotifier, List<ProductModel>>(InventoryNotifier.new);
+final inventoryProvider =
+    AsyncNotifierProvider<InventoryNotifier, List<ProductModel>>(
+      InventoryNotifier.new,
+    );
 
-// Search query Notifier for instant filtering in Screen 4
+// Search query Notifier for instant filtering
 class SearchQueryNotifier extends Notifier<String> {
   @override
   String build() => "";
@@ -63,82 +178,33 @@ class SearchQueryNotifier extends Notifier<String> {
   void setQuery(String query) => state = query;
 }
 
-final inventorySearchProvider = NotifierProvider<SearchQueryNotifier, String>(SearchQueryNotifier.new);
+final inventorySearchProvider = NotifierProvider<SearchQueryNotifier, String>(
+  SearchQueryNotifier.new,
+);
 
-final filteredInventoryProvider = Provider<List<ProductModel>>((ref) {
-  final products = ref.watch(inventoryProvider);
+final filteredInventoryProvider = Provider<AsyncValue<List<ProductModel>>>((
+  ref,
+) {
+  final productsAsync = ref.watch(inventoryProvider);
   final query = ref.watch(inventorySearchProvider).toLowerCase().trim();
 
-  if (query.isEmpty) return products;
-
-  return products.where((p) =>
-    p.name.toLowerCase().contains(query) ||
-    p.category.toLowerCase().contains(query)
-  ).toList();
+  return productsAsync.whenData((products) {
+    if (query.isEmpty) return products;
+    return products
+        .where(
+          (p) =>
+              p.name.toLowerCase().contains(query) ||
+              p.category.toLowerCase().contains(query),
+        )
+        .toList();
+  });
 });
 
-final List<ProductModel> _initialProducts = [
-  const ProductModel(
-    id: "P1",
-    name: "Fresh Tamatar (Tomato)",
-    category: "Vegetables",
-    price: 40.0,
-    unit: "Rs. 40 / Kg",
-    imageUrl: "🍅",
-    inStock: true,
-  ),
-  const ProductModel(
-    id: "P2",
-    name: "Lal Pyaz (Red Onion)",
-    category: "Vegetables",
-    price: 35.0,
-    unit: "Rs. 35 / Kg",
-    imageUrl: "🧅",
-    inStock: true,
-  ),
-  const ProductModel(
-    id: "P3",
-    name: "Pahadi Aloo (Potato)",
-    category: "Vegetables",
-    price: 30.0,
-    unit: "Rs. 30 / Kg",
-    imageUrl: "🥔",
-    inStock: true,
-  ),
-  const ProductModel(
-    id: "P4",
-    name: "Hari Mirch (Green Chilli)",
-    category: "Spices",
-    price: 80.0,
-    unit: "Rs. 80 / Kg",
-    imageUrl: "🌶️",
-    inStock: true,
-  ),
-  const ProductModel(
-    id: "P5",
-    name: "Hara Dhania (Coriander)",
-    category: "Leafy",
-    price: 20.0,
-    unit: "Rs. 20 / Bunch",
-    imageUrl: "🌿",
-    inStock: false,
-  ),
-  const ProductModel(
-    id: "P6",
-    name: "Robusta Banana (Kela)",
-    category: "Fruits",
-    price: 50.0,
-    unit: "Rs. 50 / Dozen",
-    imageUrl: "🍌",
-    inStock: true,
-  ),
-  const ProductModel(
-    id: "P7",
-    name: "Amul Masti Curd",
-    category: "Dairy",
-    price: 35.0,
-    unit: "Rs. 35 / Pouch",
-    imageUrl: "🥛",
-    inStock: true,
-  ),
-];
+final categoriesProvider = FutureProvider<List<String>>((ref) async {
+  try {
+    return await ApiService.fetchCategories();
+  } catch (e) {
+    print('Error fetching categories: $e');
+    return []; // Return empty list instead of static dummy categories
+  }
+});

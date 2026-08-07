@@ -50,23 +50,11 @@ class OrderDetailsModal {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      "OTP: ${order.otp}",
-                      style: AppTextStyles.badgeText.copyWith(color: AppColors.primaryDark),
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 6),
               Text(
-                "Customer: ${order.customerName} (${order.customerPhone})",
+                "Customer: ${order.customerName}",
                 style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -130,23 +118,6 @@ class OrderDetailsModal {
 
               Row(
                 children: [
-                  Expanded(
-                    child: CustomButton(
-                      label: "Call Customer",
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Calling ${order.customerName} (${order.customerPhone})..."),
-                            backgroundColor: AppColors.info,
-                          ),
-                        );
-                      },
-                      isOutlined: true,
-                      icon: Icons.phone_outlined,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
                   Expanded(
                     child: CustomButton(
                       label: "Call Delivery Boy",

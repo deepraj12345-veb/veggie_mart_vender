@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../consts/app_colors.dart';
 import '../../consts/app_text_styles.dart';
 import '../../providers/profile_provider.dart';
+import '../../providers/localization_provider.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/reusable_card.dart';
 import '../../widgets/custom_button.dart';
 import '../auth/login_screen.dart';
 import 'edit_profile_modal.dart';
 import 'help_support_screen.dart';
+import 'manage_riders_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -16,10 +18,11 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileProvider);
+    final tr = ref.watch(translationProvider);
 
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: "Profile & Settings",
+      appBar: CustomAppBar(
+        title: tr("Profile & Settings"),
         showOpenCloseToggle: false,
       ),
       body: SingleChildScrollView(
@@ -48,14 +51,37 @@ class ProfileScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(profile.vendorName, style: AppTextStyles.heading1, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text(
+                          profile.vendorName,
+                          style: AppTextStyles.heading1,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         const SizedBox(height: 2),
-                        Text(profile.phoneNumber, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                        Text(
+                          profile.phoneNumber,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(4)),
-                          child: Text(profile.storeName, style: AppTextStyles.badgeText.copyWith(color: AppColors.primaryDark), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            profile.storeName,
+                            style: AppTextStyles.badgeText.copyWith(
+                              color: AppColors.primaryDark,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
@@ -69,19 +95,35 @@ class ProfileScreen extends ConsumerWidget {
             ReusableCard(
               child: Row(
                 children: [
-                  const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 22),
+                  const Icon(
+                    Icons.location_on_outlined,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Store Address", style: AppTextStyles.bodySmall),
-                        Text(profile.storeAddress, style: AppTextStyles.bodyMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                        Text(
+                          tr("Store Address"),
+                          style: AppTextStyles.bodySmall,
+                        ),
+                        Text(
+                          profile.storeAddress,
+                          style: AppTextStyles.bodyMedium,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.edit, size: 18, color: AppColors.textSecondary),
+                    icon: const Icon(
+                      Icons.edit,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
                     onPressed: () {
                       EditProfileModal.show(context, ref);
                     },
@@ -92,7 +134,7 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 16),
 
             // Language Selector: English / Hindi
-            Text("App Settings", style: AppTextStyles.heading2),
+            Text(tr("App Settings"), style: AppTextStyles.heading2),
             const SizedBox(height: 8),
             ReusableCard(
               child: Row(
@@ -101,14 +143,28 @@ class ProfileScreen extends ConsumerWidget {
                   Expanded(
                     child: Row(
                       children: [
-                        const Icon(Icons.language, color: AppColors.primary, size: 22),
+                        const Icon(
+                          Icons.language,
+                          color: AppColors.primary,
+                          size: 22,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Language / भाषा", style: AppTextStyles.heading3, maxLines: 1, overflow: TextOverflow.ellipsis),
-                              Text("Current: ${profile.language}", style: AppTextStyles.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                              Text(
+                                tr("Language / भाषा"),
+                                style: AppTextStyles.heading3,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                "${tr("Current: ")}${profile.language}",
+                                style: AppTextStyles.bodySmall,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ],
                           ),
                         ),
@@ -118,10 +174,57 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Row(
                     children: [
-                      _buildLangChip(ref, "English", profile.language == "English"),
+                      _buildLangChip(
+                        ref,
+                        "English",
+                        profile.language == "English",
+                      ),
                       const SizedBox(width: 6),
                       _buildLangChip(ref, "Hindi", profile.language == "Hindi"),
                     ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Manage Delivery Boys
+            ReusableCard(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ManageRidersScreen(),
+                  ),
+                );
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.motorcycle_outlined,
+                          color: AppColors.primary,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            tr("Manage Delivery Boys"),
+                            style: AppTextStyles.bodyMedium,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: AppColors.textLight,
                   ),
                 ],
               ),
@@ -133,7 +236,9 @@ class ProfileScreen extends ConsumerWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const HelpSupportScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const HelpSupportScreen(),
+                  ),
                 );
               },
               child: Row(
@@ -142,15 +247,28 @@ class ProfileScreen extends ConsumerWidget {
                   Expanded(
                     child: Row(
                       children: [
-                        const Icon(Icons.help_outline, color: AppColors.info, size: 22),
+                        const Icon(
+                          Icons.help_outline,
+                          color: AppColors.info,
+                          size: 22,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text("Help & Support / Contact Admin", style: AppTextStyles.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            tr("Help & Support / Contact Admin"),
+                            style: AppTextStyles.bodyMedium,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.textLight),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: AppColors.textLight,
+                  ),
                 ],
               ),
             ),
@@ -158,25 +276,36 @@ class ProfileScreen extends ConsumerWidget {
 
             // "Logout" Button
             CustomButton(
-              label: "Logout from Account",
+              label: tr("Logout from Account"),
               onPressed: () {
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text("Logout"),
-                    content: const Text("Are you sure you want to logout from Veggie Mart Vendor app?"),
+                    title: Text(tr("Logout")),
+                    content: Text(
+                      tr(
+                        "Are you sure you want to logout from Veg King Vendor app?",
+                      ),
+                    ),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(tr("Cancel")),
+                      ),
                       ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                        ),
                         onPressed: () {
                           Navigator.pushAndRemoveUntil(
                             context,
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
                             (route) => false,
                           );
                         },
-                        child: const Text("Logout"),
+                        child: Text(tr("Logout")),
                       ),
                     ],
                   ),
@@ -201,7 +330,9 @@ class ProfileScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : AppColors.background,
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: isSelected ? AppColors.primary : AppColors.border),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.border,
+          ),
         ),
         child: Text(
           lang,

@@ -36,4 +36,28 @@ class ProductModel {
       inStock: inStock ?? this.inStock,
     );
   }
+
+  factory ProductModel.fromJson(Map<String, dynamic> json) {
+    return ProductModel(
+      id: json['_id'] ?? json['id'] ?? '',
+      name: json['product_name'] ?? json['name'] ?? '',
+      category: json['category'] ?? '',
+      price: (json['selling_price'] ?? json['price'] ?? 0.0).toDouble(),
+      unit: json['volume'] ?? json['unit'] ?? '',
+      imageUrl: json['product_images'] ?? json['imageUrl'] ?? '',
+      inStock: json['stock_status'] == 'in_stock' || (json['inStock'] ?? true),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id.isNotEmpty && !id.startsWith('P-')) '_id': id,
+      'product_name': name,
+      'category': category,
+      'selling_price': price,
+      'volume': unit,
+      'product_images': imageUrl,
+      'stock_status': inStock ? 'in_stock' : 'out_of_stock',
+    };
+  }
 }

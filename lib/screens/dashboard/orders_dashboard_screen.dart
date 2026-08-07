@@ -4,8 +4,10 @@ import '../../consts/app_colors.dart';
 import '../../consts/app_text_styles.dart';
 import '../../models/order_model.dart';
 import '../../providers/orders_provider.dart';
+import '../../providers/localization_provider.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/order_card.dart';
+import '../../widgets/assign_rider_modal.dart';
 import 'order_details_modal.dart';
 
 class OrdersDashboardScreen extends ConsumerStatefulWidget {
@@ -31,7 +33,6 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
   }
 
   void _showHandoverModal(OrderModel order) {
-    final otpController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) {
@@ -43,26 +44,7 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Ask Delivery Boy (${order.deliveryBoyName ?? 'Uday Bharat'}) for the 4-digit OTP code or scan QR.", style: AppTextStyles.bodyMedium),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: otpController,
-                  keyboardType: TextInputType.number,
-                  maxLength: 4,
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.heading1.copyWith(letterSpacing: 6, fontSize: 20),
-                  decoration: const InputDecoration(
-                    hintText: "• • • •",
-                    counterText: "",
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    "Hint: Order OTP is ${order.otp}",
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryDark),
-                  ),
-                ),
+                Text("Are you sure you want to handover this order to the Delivery Boy (${order.deliveryBoyName ?? 'Uday Bharat'})?", style: AppTextStyles.bodyMedium),
               ],
             ),
           ),
@@ -72,8 +54,9 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
               child: const Text("Cancel"),
             ),
             ElevatedButton(
-              onPressed: () {
-                final success = ref.read(ordersProvider.notifier).handoverOrder(order.id, otpController.text.trim());
+              onPressed: () async {
+                final success = await ref.read(ordersProvider.notifier).handoverOrder(order.id);
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 if (success) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -85,14 +68,14 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text("❌ Incorrect OTP! Please verify with Delivery Boy."),
+                      content: Text("❌ Failed to handover order!"),
                       backgroundColor: AppColors.error,
                     ),
                   );
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-              child: const Text("Verify & Handover"),
+              child: const Text("Handover"),
             ),
           ],
         );
@@ -102,14 +85,15 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
 
   @override
   Widget build(BuildContext context) {
+    final tr = ref.watch(translationProvider);
     final newOrders = ref.watch(newOrdersProvider);
     final prepOrders = ref.watch(preparingOrdersProvider);
     final readyOrders = ref.watch(readyOrdersProvider);
     final completedOrders = ref.watch(completedOrdersProvider);
 
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: "Live Orders",
+      appBar: CustomAppBar(
+        title: tr("Live Orders"),
         showOpenCloseToggle: true,
       ),
       body: Column(
@@ -127,10 +111,10 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
               isScrollable: true,
               tabAlignment: TabAlignment.start,
               tabs: [
-                Tab(text: "New (${newOrders.length})"),
-                Tab(text: "Preparing (${prepOrders.length})"),
-                Tab(text: "Ready (${readyOrders.length})"),
-                Tab(text: "Completed (${completedOrders.length})"),
+                Tab(text: "${tr("New")} (${newOrders.length})"),
+                Tab(text: "${tr("Preparing")} (${prepOrders.length})"),
+                Tab(text: "${tr("Ready")} (${readyOrders.length})"),
+                Tab(text: "${tr("Completed")} (${completedOrders.length})"),
               ],
             ),
           ),
@@ -138,10 +122,10 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildOrderList(newOrders, "No new incoming orders right now."),
-                _buildOrderList(prepOrders, "No orders currently being prepared."),
-                _buildOrderList(readyOrders, "No packed orders waiting for pickup."),
-                _buildOrderList(completedOrders, "No completed orders yet.", isCompleted: true),
+                _buildOrderList(newOrders, tr("No new incoming orders right now.")),
+                _buildOrderList(prepOrders, tr("No orders currently being prepared.")),
+                _buildOrderList(readyOrders, tr("No packed orders waiting for pickup.")),
+                _buildOrderList(completedOrders, tr("No completed orders yet."), isCompleted: true),
               ],
             ),
           ),
@@ -151,66 +135,106 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
   }
 
   Widget _buildOrderList(List<OrderModel> orders, String emptyMsg, {bool isCompleted = false}) {
+    Widget content;
     if (orders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.inbox_outlined, size: 48, color: AppColors.textLight),
-            const SizedBox(height: 12),
-            Text(emptyMsg, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
-          ],
+      content = SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.inbox_outlined, size: 48, color: AppColors.textLight),
+              const SizedBox(height: 12),
+              Text(emptyMsg, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+            ],
+          ),
         ),
+      );
+    } else {
+      content = ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        itemCount: orders.length,
+        itemBuilder: (context, index) {
+          final order = orders[index];
+          return OrderCard(
+            order: order,
+            onViewDetails: () => OrderDetailsModal.show(context, order),
+            onAccept: () async {
+              if (isCompleted) return;
+              await ref.read(ordersProvider.notifier).acceptOrder(order.id);
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("Order ${order.id} accepted! Moved to Preparing tab."),
+                  backgroundColor: AppColors.primaryDark,
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+            onReject: () async {
+              if (isCompleted) return;
+              await ref.read(ordersProvider.notifier).rejectOrder(order.id);
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("Order ${order.id} rejected."),
+                  backgroundColor: AppColors.error,
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+            onAssignRider: () {
+              if (isCompleted) return;
+              AssignRiderModal.show(context, order, (rider) async {
+                final success = await ref.read(ordersProvider.notifier).assignRiderToOrder(order.id, rider);
+                if (!context.mounted) return;
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Rider ${rider.name} assigned to Order ${order.id}!"),
+                      backgroundColor: AppColors.success,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Failed to assign rider"),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
+              });
+            },
+            onMarkReady: () async {
+              if (isCompleted) return;
+              await ref.read(ordersProvider.notifier).markAsReady(order.id);
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("Order ${order.id} marked as Ready! Delivery boy assigned."),
+                  backgroundColor: AppColors.info,
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+            onHandover: () {
+              if (isCompleted) return;
+              _showHandoverModal(order);
+            },
+          );
+        },
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: orders.length,
-      itemBuilder: (context, index) {
-        final order = orders[index];
-        return OrderCard(
-          order: order,
-          onViewDetails: () => OrderDetailsModal.show(context, order),
-          onAccept: () {
-            if (isCompleted) return;
-            ref.read(ordersProvider.notifier).acceptOrder(order.id);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Order ${order.id} accepted! Moved to Preparing tab."),
-                backgroundColor: AppColors.primaryDark,
-                duration: const Duration(seconds: 1),
-              ),
-            );
-          },
-          onReject: () {
-            if (isCompleted) return;
-            ref.read(ordersProvider.notifier).rejectOrder(order.id);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Order ${order.id} rejected."),
-                backgroundColor: AppColors.error,
-                duration: const Duration(seconds: 1),
-              ),
-            );
-          },
-          onMarkReady: () {
-            if (isCompleted) return;
-            ref.read(ordersProvider.notifier).markAsReady(order.id);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text("Order ${order.id} marked as Ready! Delivery boy assigned."),
-                backgroundColor: AppColors.info,
-                duration: const Duration(seconds: 1),
-              ),
-            );
-          },
-          onHandover: () {
-            if (isCompleted) return;
-            _showHandoverModal(order);
-          },
-        );
+    return RefreshIndicator(
+      onRefresh: () async {
+        await ref.read(ordersProvider.notifier).refresh();
       },
+      child: content,
     );
   }
 }

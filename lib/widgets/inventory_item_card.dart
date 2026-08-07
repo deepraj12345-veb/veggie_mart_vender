@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../consts/app_colors.dart';
@@ -73,10 +74,21 @@ class _InventoryItemCardState extends ConsumerState<InventoryItemCard> {
               color: product.inStock ? AppColors.primaryLight : AppColors.errorLight,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              product.imageUrl,
-              style: const TextStyle(fontSize: 24),
-            ),
+            child: product.imageUrl.length > 2 
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(
+                      File(product.imageUrl),
+                      fit: BoxFit.cover,
+                      width: 44,
+                      height: 44,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: AppColors.error),
+                    ),
+                  )
+                : Text(
+                    product.imageUrl,
+                    style: const TextStyle(fontSize: 24),
+                  ),
           ),
           const SizedBox(width: 10),
 

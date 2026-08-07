@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../consts/app_colors.dart';
 import '../consts/app_text_styles.dart';
 import '../providers/store_provider.dart';
+import '../providers/localization_provider.dart';
 import '../screens/dashboard/notifications_screen.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -20,6 +21,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isStoreOpen = ref.watch(storeStatusProvider);
+    final tr = ref.watch(translationProvider);
 
     return AppBar(
       backgroundColor: AppColors.surface,
@@ -72,7 +74,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
               children: [
                 const SizedBox(width: 8),
                 Text(
-                  isStoreOpen ? "Online" : "Offline",
+                  isStoreOpen ? tr("Online") : tr("Offline"),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -98,8 +100,8 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                           SnackBar(
                             content: Text(
                               val
-                                  ? "🟢 Store is now ONLINE for new orders!"
-                                  : "🔴 Store is OFFLINE. No new orders will arrive.",
+                                  ? tr("🟢 Store is now ONLINE for new orders!")
+                                  : tr("🔴 Store is OFFLINE. No new orders will arrive."),
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: AppColors.white,
                               ),

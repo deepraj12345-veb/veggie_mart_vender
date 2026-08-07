@@ -35,10 +35,10 @@ class VendorProfileState {
 class ProfileNotifier extends Notifier<VendorProfileState> {
   @override
   VendorProfileState build() => const VendorProfileState(
-        vendorName: "Ramesh Gupta",
-        phoneNumber: "+91 9876543210",
-        storeName: "Gupta Veggie Mart & Grocery",
-        storeAddress: "Shop 14, Main Market, Sector 62, Noida",
+        vendorName: "Vendor Name",
+        phoneNumber: "",
+        storeName: "Store Name",
+        storeAddress: "Store Address",
         language: "English",
       );
 

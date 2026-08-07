@@ -6,18 +6,18 @@ import 'screens/splash/splash_screen.dart';
 void main() {
   runApp(
     const ProviderScope(
-      child: VeggieMartVendorApp(),
+      child: VegKingVendorApp(),
     ),
   );
 }
 
-class VeggieMartVendorApp extends StatelessWidget {
-  const VeggieMartVendorApp({super.key});
+class VegKingVendorApp extends StatelessWidget {
+  const VegKingVendorApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Veggie Mart Vendor',
+      title: 'Veg King Vendor',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const SplashScreen(),

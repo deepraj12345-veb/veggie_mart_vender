@@ -10,6 +10,7 @@ class OrderCard extends StatelessWidget {
   final VoidCallback? onAccept;
   final VoidCallback? onReject;
   final VoidCallback? onMarkReady;
+  final VoidCallback? onAssignRider;
   final VoidCallback? onHandover;
   final VoidCallback? onViewDetails;
 
@@ -18,6 +19,7 @@ class OrderCard extends StatelessWidget {
     required this.order,
     this.onAccept,
     this.onReject,
+    this.onAssignRider,
     this.onMarkReady,
     this.onHandover,
     this.onViewDetails,
@@ -166,22 +168,33 @@ class OrderCard extends StatelessWidget {
         ],
       );
     } else if (order.status == OrderStatus.preparing) {
-      return CustomButton(
-        label: "Mark as Ready",
-        onPressed: onMarkReady ?? () {},
-        backgroundColor: AppColors.info,
-        textColor: AppColors.white,
-        isDense: true,
-        icon: Icons.done_all,
-      );
+      if (order.deliveryBoyName == null) {
+        return CustomButton(
+          label: "Assign Rider",
+          onPressed: onAssignRider ?? () {},
+          backgroundColor: AppColors.primary,
+          textColor: AppColors.white,
+          isDense: true,
+          icon: Icons.motorcycle,
+        );
+      } else {
+        return CustomButton(
+          label: "Mark as Ready",
+          onPressed: onMarkReady ?? () {},
+          backgroundColor: AppColors.info,
+          textColor: AppColors.white,
+          isDense: true,
+          icon: Icons.done_all,
+        );
+      }
     } else if (order.status == OrderStatus.ready) {
       return CustomButton(
-        label: "Handover to Delivery Boy (OTP)",
+        label: "Handover to Delivery Boy",
         onPressed: onHandover ?? () {},
         backgroundColor: AppColors.primaryDark,
         textColor: AppColors.white,
         isDense: true,
-        icon: Icons.qr_code_scanner,
+        icon: Icons.delivery_dining,
       );
     }
     return const SizedBox.shrink();

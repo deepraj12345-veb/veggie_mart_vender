@@ -28,7 +28,7 @@ class HelpSupportScreen extends StatelessWidget {
             _buildFaqItem("When do I get my payouts?", "Payouts are processed weekly on Mondays and credited directly to your connected bank account."),
             const SizedBox(height: 30),
             
-            Text("Contact Veggie Mart Admin", style: AppTextStyles.heading2),
+            Text("Contact Veg King Admin", style: AppTextStyles.heading2),
             const SizedBox(height: 12),
             TextField(
               maxLines: 4,
@@ -57,7 +57,7 @@ class HelpSupportScreen extends StatelessWidget {
             const SizedBox(height: 20),
             Center(
               child: Text(
-                "Or call us directly at 1800-VEGGIE (Toll Free)",
+                "Or call us directly at 1800-VEGKING (Toll Free)",
                 style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
               ),
             ),

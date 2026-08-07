@@ -28,8 +28,8 @@ class WalletState {
 class WalletNotifier extends Notifier<WalletState> {
   @override
   WalletState build() => const WalletState(
-        todayEarnings: 1450.0,
-        availableBalance: 8420.0,
+        todayEarnings: 0.0,
+        availableBalance: 0.0,
         transactions: _initialTransactions,
       );
 
@@ -60,29 +60,4 @@ class WalletNotifier extends Notifier<WalletState> {
 
 final walletProvider = NotifierProvider<WalletNotifier, WalletState>(WalletNotifier.new);
 
-const List<TransactionModel> _initialTransactions = [
-  TransactionModel(
-    id: "TXN-8820",
-    orderId: "#ORD-1038",
-    date: "Today, 09:15 AM",
-    amount: 320.0,
-  ),
-  TransactionModel(
-    id: "TXN-8819",
-    orderId: "#ORD-1035",
-    date: "Today, 08:40 AM",
-    amount: 450.0,
-  ),
-  TransactionModel(
-    id: "TXN-8818",
-    orderId: "#ORD-1031",
-    date: "Yesterday, 07:20 PM",
-    amount: 680.0,
-  ),
-  TransactionModel(
-    id: "TXN-8817",
-    orderId: "#ORD-1029",
-    date: "Yesterday, 05:10 PM",
-    amount: 210.0,
-  ),
-];
+const List<TransactionModel> _initialTransactions = [];

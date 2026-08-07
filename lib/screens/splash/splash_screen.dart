@@ -2,6 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../consts/app_colors.dart';
 import '../auth/login_screen.dart';
+import '../main_nav_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/api_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -37,11 +40,24 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
 
     // Navigate to Login Screen after 2.5 seconds
-    Timer(const Duration(milliseconds: 2500), () {
+    Timer(const Duration(milliseconds: 2500), () async {
+      final prefs = await SharedPreferences.getInstance();
+      final isLoggedIn = prefs.getBool('isVendorLoggedIn') ?? false;
+      
+      if (isLoggedIn) {
+        final token = prefs.getString('vendorToken');
+        if (token != null) {
+          ApiService.authToken = token;
+          ApiService.sessionCookie = '__Secure-next-auth.session-token=$token';
+        }
+      }
+
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          MaterialPageRoute(
+            builder: (context) => isLoggedIn ? const MainNavScreen() : const LoginScreen(),
+          ),
         );
       }
     });
@@ -95,7 +111,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     const SizedBox(height: 32),
                     const Text(
-                      "Veggie Mart",
+                      "Veg King",
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w800,

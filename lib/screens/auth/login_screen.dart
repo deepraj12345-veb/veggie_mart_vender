@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../consts/app_colors.dart';
-import 'otp_verification_screen.dart';
+import '../main_nav_screen.dart';
+import '../../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,37 +12,72 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _phoneController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _phoneController.dispose();
-    _focusNode.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  void _onGetOtp() async {
-    final phone = _phoneController.text.trim();
-    if (phone.length == 10) {
+  void _onLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isNotEmpty && password.isNotEmpty) {
       FocusScope.of(context).unfocus();
       setState(() => _isLoading = true);
 
-      // Simulate network request
-      await Future.delayed(const Duration(milliseconds: 800));
+      try {
+        await ApiService.vendorLogin(email, password);
 
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+        // Save auth state
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isVendorLoggedIn', true);
+        if (ApiService.authToken != null) {
+          await prefs.setString('vendorToken', ApiService.authToken!);
+        }
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              OtpVerificationScreen(phoneNumber: "+91 $phone"),
-        ),
-      );
+        if (!mounted) return;
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const MainNavScreen()),
+          (route) => false,
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.error_outline_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(e.toString().replaceAll('Exception: ', '')),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -49,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Icon(Icons.error_outline_rounded, color: Colors.white, size: 20),
               SizedBox(width: 8),
-              Text("Please enter a valid 10-digit number"),
+              Text("Please enter both email and password"),
             ],
           ),
           backgroundColor: AppColors.error,
@@ -129,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // Welcome Texts
                     const Text(
-                      "Veggie Mart",
+                      "Veg King",
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
@@ -148,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 48),
 
-                    // Phone Number Input Container
+                    // Email Input Container
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
@@ -166,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            "Mobile Number",
+                            "Email Address",
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -175,78 +211,117 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // Country Code
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                  ),
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.08),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Row(
-                                    children: [
-                                      Text(
-                                        "🇮🇳",
-                                        style: TextStyle(fontSize: 16),
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        "+91",
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.primaryDark,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                          TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF0F172A),
+                            ),
+                            decoration: InputDecoration(
+                              hintText: "vendor@example.com",
+                              hintStyle: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFFCBD5E1),
+                                fontWeight: FontWeight.w400,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.email_outlined,
+                                color: AppColors.primary,
+                                size: 22,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
                                 ),
-                                const SizedBox(width: 14),
-                                // Input Field
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _phoneController,
-                                    focusNode: _focusNode,
-                                    keyboardType: TextInputType.phone,
-                                    maxLength: 10,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 1.2,
-                                      color: Color(0xFF0F172A),
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText: "00000 00000",
-                                      hintStyle: TextStyle(
-                                        fontSize: 20,
-                                        color: Color(0xFFCBD5E1),
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 1.2,
-                                      ),
-                                      counterText: "",
-                                      border: InputBorder.none,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            vertical: 4,
-                                          ),
-                                    ),
-                                    onChanged: (val) {
-                                      if (val.length == 10) {
-                                        _focusNode.unfocus();
-                                      }
-                                    },
-                                  ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
                                 ),
-                              ],
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.primary,
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            "Password",
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryDark,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF0F172A),
+                            ),
+                            decoration: InputDecoration(
+                              hintText: "Enter password",
+                              hintStyle: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFFCBD5E1),
+                                fontWeight: FontWeight.w400,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.lock_outline_rounded,
+                                color: AppColors.primary,
+                                size: 22,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                  color: Colors.grey.shade600,
+                                  size: 22,
+                                ),
+                                onPressed: () {
+                                  setState(
+                                    () => _obscurePassword = !_obscurePassword,
+                                  );
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.primary,
+                                  width: 2,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                              ),
                             ),
                           ),
                         ],
@@ -254,13 +329,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 40),
 
-                    // Gradient Get OTP Button
+                    // Gradient Login Button
                     SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: Container(
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _onGetOtp,
+                          onPressed: _isLoading ? null : _onLogin,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,
@@ -315,7 +390,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          "Get OTP",
+                                          "Login",
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 16,
