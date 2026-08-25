@@ -68,8 +68,7 @@ class ApiService {
   static String? sessionCookie; // Stores NextAuth session cookie for web API
 
   static String get baseUrl {
-    // Make sure it ends with /api !
-    return 'http://10.0.2.2:3000/api';
+    return 'https://vegimart-backend.vercel.app/api/v1';
   }
 
   static Map<String, String> _buildHeaders() {
