@@ -106,10 +106,13 @@ class OrdersNotifier extends AsyncNotifier<List<OrderModel>> {
     }
   }
 
-  // Assign rider to order and move to ready state (or keep in preparing depending on flow, but assignment is its own step)
+  // Assign rider to order and move to ready state directly
   Future<bool> assignRiderToOrder(String orderId, RiderModel rider) async {
     try {
       await ApiService.assignRider(orderId, rider.id);
+      // Move to ready state immediately as requested
+      await ApiService.updateOrderStatus(orderId, OrderStatus.ready.index);
+
       if (state.value != null) {
         state = AsyncValue.data([
           for (final order in state.value!)
@@ -117,6 +120,7 @@ class OrdersNotifier extends AsyncNotifier<List<OrderModel>> {
               order.copyWith(
                 deliveryBoyName: rider.name,
                 deliveryBoyPhone: rider.mobileNumber,
+                status: OrderStatus.ready,
               )
             else
               order,

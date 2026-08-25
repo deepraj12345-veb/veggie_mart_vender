@@ -1,16 +1,75 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as http_pkg;
+import 'package:pretty_http_logger/pretty_http_logger.dart';
 import '../models/product_model.dart';
 import '../models/order_model.dart';
 import '../models/rider_model.dart';
 
+class ColorfulHttpLogger implements MiddlewareContract {
+  @override
+  void interceptRequest(RequestData data) {
+    // Cyan color for Request
+    print('\x1B[36m╔╣ Request ║ ${data.method.toString().split('.').last}');
+    print('║  ${data.url}');
+    final headers = ApiService._buildHeaders();
+    if (headers.isNotEmpty) {
+      print('║  Headers:');
+      headers.forEach((key, value) {
+        print('║    $key: $value');
+      });
+    }
+    print(
+      '╚══════════════════════════════════════════════════════════════════════════════════════════╝\x1B[0m',
+    );
+  }
+
+  @override
+  void interceptResponse(ResponseData data) {
+    // Green for success, Red for error
+    final bool isSuccess = data.statusCode >= 200 && data.statusCode < 300;
+    final String color = isSuccess ? '\x1B[32m' : '\x1B[31m';
+
+    print('$color╔╣ Response ║ Status: ${data.statusCode}');
+    print('║  ${data.url}');
+    print(
+      '╚══════════════════════════════════════════════════════════════════════════════════════════╝',
+    );
+    print('╔ Body');
+    try {
+      final jsonBody = json.decode(data.body);
+      final prettyString = const JsonEncoder.withIndent('  ').convert(jsonBody);
+      final lines = prettyString.split('\n');
+      for (var line in lines) {
+        print('║ $line');
+      }
+    } catch (_) {
+      print('║ ${data.body}');
+    }
+    print(
+      '╚══════════════════════════════════════════════════════════════════════════════════════════╝\x1B[0m',
+    );
+  }
+
+  @override
+  void interceptError(dynamic err) {
+    print('\x1B[31m╔╣ Error ║ $err');
+    print(
+      '╚══════════════════════════════════════════════════════════════════════════════════════════╝\x1B[0m',
+    );
+  }
+}
+
 class ApiService {
+  static final httpClient = HttpWithMiddleware.build(
+    middlewares: [ColorfulHttpLogger()],
+  );
+
   static String? authToken; // Stores the logged-in vendor's token
   static String? sessionCookie; // Stores NextAuth session cookie for web API
 
   static String get baseUrl {
     // Make sure it ends with /api !
-    return 'http://10.212.40.117:3000/api';
+    return 'http://10.0.2.2:3000/api';
   }
 
   static Map<String, String> _buildHeaders() {
@@ -34,7 +93,7 @@ class ApiService {
         },
       );
 
-      final response = await http
+      final response = await httpClient
           .get(uri, headers: _buildHeaders())
           .timeout(const Duration(seconds: 15));
 
@@ -54,7 +113,7 @@ class ApiService {
 
   static Future<ProductModel> createProduct(ProductModel product) async {
     try {
-      final response = await http.post(
+      final response = await httpClient.post(
         Uri.parse('$baseUrl/vendor-add-products'),
         headers: _buildHeaders(),
         body: json.encode(product.toJson()),
@@ -78,7 +137,7 @@ class ApiService {
     Map<String, dynamic> data,
   ) async {
     try {
-      final response = await http.patch(
+      final response = await httpClient.patch(
         Uri.parse('$baseUrl/vendor-add-products/$productId'),
         headers: _buildHeaders(),
         body: json.encode(data),
@@ -93,7 +152,7 @@ class ApiService {
 
   static Future<void> deleteProduct(String productId) async {
     try {
-      final response = await http.delete(
+      final response = await httpClient.delete(
         Uri.parse('$baseUrl/vendor-add-products/$productId'),
         headers: _buildHeaders(),
       );
@@ -107,15 +166,19 @@ class ApiService {
 
   static Future<List<String>> fetchCategories() async {
     try {
-      final response = await http.get(
+      final response = await httpClient.get(
         Uri.parse('$baseUrl/vendor-categories'),
         headers: _buildHeaders(),
       );
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        // Assuming it returns { "data": ["Vegetables", "Fruits", ...] }
         final List<dynamic> items = data['data'] ?? [];
-        return items.map((e) => e.toString()).toList();
+        return items.map((e) {
+          if (e is Map) {
+            return (e['category_name'] ?? e['name'] ?? e.toString()).toString();
+          }
+          return e.toString();
+        }).toList();
       } else {
         throw Exception('Failed to load categories');
       }
@@ -142,10 +205,7 @@ class ApiService {
         headers['Cookie'] = sessionCookie!;
       }
 
-      print('Requesting Orders from: $uri');
-      print('Headers being sent: $headers');
-
-      final response = await http
+      final response = await httpClient
           .get(uri, headers: headers)
           .timeout(const Duration(seconds: 15));
 
@@ -187,7 +247,7 @@ class ApiService {
           break;
       }
 
-      final response = await http.patch(
+      final response = await httpClient.patch(
         Uri.parse('$baseUrl/orders/$orderId'),
         headers: _buildHeaders(),
         body: json.encode({'status': status, 'orderStatus': orderStatusStr}),
@@ -202,7 +262,7 @@ class ApiService {
 
   static Future<void> assignRider(String orderId, String deliveryBoyId) async {
     try {
-      final response = await http.patch(
+      final response = await httpClient.patch(
         Uri.parse('$baseUrl/orders/$orderId'),
         headers: _buildHeaders(),
         body: json.encode({'delivery_boy_id': deliveryBoyId}),
@@ -217,7 +277,9 @@ class ApiService {
 
   static Future<void> deleteOrder(String orderId) async {
     try {
-      final response = await http.delete(Uri.parse('$baseUrl/orders/$orderId'));
+      final response = await httpClient.delete(
+        Uri.parse('$baseUrl/orders/$orderId'),
+      );
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Failed to delete order');
       }
@@ -239,7 +301,9 @@ class ApiService {
 
     // Step 1: GET CSRF Token
     print('Step 1: Fetching CSRF token from $rootUrl/api/auth/csrf');
-    final csrfResponse = await http.get(Uri.parse('$rootUrl/api/auth/csrf'));
+    final csrfResponse = await httpClient.get(
+      Uri.parse('$rootUrl/api/auth/csrf'),
+    );
     print('CSRF Response Status: ${csrfResponse.statusCode}');
 
     if (csrfResponse.statusCode != 200) {
@@ -252,34 +316,77 @@ class ApiService {
     print('Extracted CSRF Token: $csrfToken');
 
     // Save cookies from CSRF response (needed for csrf verification)
-    String? csrfCookieHeader = csrfResponse.headers['set-cookie'];
-    print('Extracted CSRF Set-Cookie: $csrfCookieHeader');
+    String? rawCsrfCookie = csrfResponse.headers['set-cookie'];
+    String? cleanedCsrfCookie;
+    if (rawCsrfCookie != null) {
+      final RegExp cookieRegExp = RegExp(r'([^=,\s]+)=([^;]+)');
+      final Iterable<Match> matches = cookieRegExp.allMatches(rawCsrfCookie);
+      final List<String> cookies = [];
+      for (final match in matches) {
+        final key = match.group(1)!;
+        final value = match.group(2)!;
+        // Ignore standard cookie attributes
+        if (![
+          'Path',
+          'Expires',
+          'Max-Age',
+          'Domain',
+          'SameSite',
+          'HttpOnly',
+          'Secure',
+        ].contains(key)) {
+          cookies.add('$key=$value');
+        }
+      }
+      cleanedCsrfCookie = cookies.join('; ');
+    }
+    print('Cleaned CSRF Cookie: $cleanedCsrfCookie');
 
     // Step 2: POST Sign In
     print('Step 2: Sending credentials to $rootUrl/api/auth/callback/vendor');
-    final loginResponse = await http.post(
-      Uri.parse('$rootUrl/api/auth/callback/vendor'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (csrfCookieHeader != null) 'Cookie': csrfCookieHeader,
-      },
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-        'csrfToken': csrfToken,
-        'json': true,
-      }),
-    );
+    final client = http_pkg.Client();
+    final request =
+        http_pkg.Request('POST', Uri.parse('$rootUrl/api/auth/callback/vendor'))
+          ..followRedirects = false
+          ..headers['Content-Type'] = 'application/json';
 
-    print('Login Response Status: ${loginResponse.statusCode}');
-    print('Login Response Headers: ${loginResponse.headers}');
+    if (cleanedCsrfCookie != null) {
+      request.headers['Cookie'] = cleanedCsrfCookie;
+    }
+
+    request.body = jsonEncode({
+      'email': email,
+      'password': password,
+      'csrfToken': csrfToken,
+      'json': true,
+    });
+
+    final streamResponse = await client.send(request);
+    final responseBody = await streamResponse.stream.bytesToString();
+    final loginResponseStatusCode = streamResponse.statusCode;
+    final loginResponseHeaders = streamResponse.headers;
+    client.close();
+
+    print('Login Response Status: $loginResponseStatusCode');
+    print('Login Response Headers: $loginResponseHeaders');
+    print('Login Response Body: $responseBody');
+
+    // Handle NextAuth errors sent via redirect (302)
+    if (loginResponseStatusCode == 302 || loginResponseStatusCode == 301) {
+      final location = loginResponseHeaders['location'];
+      if (location != null && location.contains('error=')) {
+        final uri = Uri.parse(location);
+        final error = uri.queryParameters['error'];
+        throw Exception('Backend Error: $error');
+      }
+    }
 
     // Step 3: Extract and save session token
-    String? rawCookie = loginResponse.headers['set-cookie'];
+    String? rawCookie = loginResponseHeaders['set-cookie'];
     if (rawCookie != null) {
-      // Look for either the __Secure- version (Vercel) or the normal version (Localhost)
+      // Look for either next-auth.session-token or authjs.session-token
       RegExp regExp = RegExp(
-        r'((?:__Secure-)?next-auth\.session-token)=([^;]+)',
+        r'((?:__Secure-)?(?:next-auth|authjs)\.session-token)=([^;]+)',
       );
       var match = regExp.firstMatch(rawCookie);
       if (match != null) {
@@ -294,17 +401,21 @@ class ApiService {
         print('Session Cookie: $sessionCookie');
         return;
       } else {
-        print(
-          'ERROR: Set-Cookie found, but next-auth.session-token is missing.',
-        );
+        print('ERROR: Set-Cookie found, but session-token is missing.');
       }
     } else {
       print('ERROR: No set-cookie header returned by backend.');
     }
 
-    throw Exception(
-      'Login failed: Invalid credentials or session token not found.',
-    );
+    String errorMsg = 'Invalid credentials or session token not found.';
+    try {
+      final loginData = jsonDecode(responseBody);
+      if (loginData['error'] != null) {
+        errorMsg = loginData['error'];
+      }
+    } catch (_) {}
+
+    throw Exception('Login failed: $errorMsg');
   }
 
   // ==========================================
@@ -317,6 +428,7 @@ class ApiService {
     String search = '',
   }) async {
     try {
+      print('\x1B[33m--- FETCH RIDERS CALLED ---\x1B[0m');
       final uri = Uri.parse('$baseUrl/delivery-boys').replace(
         queryParameters: {
           'page': page.toString(),
@@ -324,15 +436,24 @@ class ApiService {
           if (search.isNotEmpty) 'search': search,
         },
       );
-      final response = await http
+      print('Requesting Riders from: $uri');
+      
+      final response = await httpClient
           .get(uri, headers: _buildHeaders())
           .timeout(const Duration(seconds: 15));
+          
+      print('Riders API Response Status: ${response.statusCode}');
+      print('Riders API Response Body: ${response.body}');
+      
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> items = data['data'] ?? [];
+        print('\x1B[32mRiders Fetched Successfully: ${items.length} items\x1B[0m');
         return items.map((e) => RiderModel.fromJson(e)).toList();
       } else {
-        throw Exception('Failed to load riders');
+        throw Exception(
+          'Failed to load riders: ${response.statusCode} ${response.body}',
+        );
       }
     } catch (e) {
       throw Exception('Network error: $e');
@@ -341,14 +462,11 @@ class ApiService {
 
   static Future<RiderModel> addRider(RiderModel rider, String password) async {
     try {
-      print('Adding rider: ${rider.toJson()}');
-      final response = await http.post(
+      final response = await httpClient.post(
         Uri.parse('$baseUrl/delivery-boys'),
         headers: _buildHeaders(),
         body: json.encode({...rider.toJson(), 'password': password}),
       );
-      print('Add Rider API Status: ${response.statusCode}');
-      print('Add Rider API Response: ${response.body}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -365,7 +483,7 @@ class ApiService {
 
   static Future<void> updateRiderStatus(String riderId, String isActive) async {
     try {
-      final response = await http.patch(
+      final response = await httpClient.patch(
         Uri.parse('$baseUrl/delivery-boys/$riderId'),
         headers: _buildHeaders(),
         body: json.encode({'is_active': isActive}),
@@ -380,7 +498,7 @@ class ApiService {
 
   static Future<void> deleteRider(String riderId) async {
     try {
-      final response = await http.delete(
+      final response = await httpClient.delete(
         Uri.parse('$baseUrl/delivery-boys/$riderId'),
         headers: _buildHeaders(),
       );
@@ -401,7 +519,7 @@ class ApiService {
     String mobileNumber,
     String password,
   ) async {
-    final response = await http.post(
+    final response = await httpClient.post(
       Uri.parse('$baseUrl/rider/auth/login'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'mobile_number': mobileNumber, 'password': password}),
@@ -417,7 +535,7 @@ class ApiService {
     String lat,
     String long,
   ) async {
-    final response = await http.patch(
+    final response = await httpClient.patch(
       Uri.parse('$baseUrl/rider/profile/location'),
       headers: {
         'Content-Type': 'application/json',

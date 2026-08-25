@@ -65,41 +65,37 @@ class _AssignRiderModalState extends State<AssignRiderModal> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: MediaQuery.of(context).size.height * 0.6,
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).padding.bottom + 20,
-      ),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.7,
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text("Assign Delivery Boy", style: AppTextStyles.heading2),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            "Order ID: ${widget.order.id}",
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+          Padding(
+            padding: const EdgeInsets.only(left: 20, right: 20, top: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Assign Delivery Boy", style: AppTextStyles.heading2),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
             ),
           ),
-          const Divider(height: 32),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              "Order ID: ${widget.order.id}",
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          const Divider(height: 24),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -113,13 +109,17 @@ class _AssignRiderModalState extends State<AssignRiderModal> {
                     ),
                   )
                 : _riders.isEmpty
-                ? Center(
+                ? const Center(
                     child: Text(
                       "No active delivery boys available.",
-                      style: AppTextStyles.bodyMedium,
                     ),
                   )
                 : ListView.separated(
+                    padding: EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                      bottom: MediaQuery.of(context).padding.bottom + 20,
+                    ),
                     itemCount: _riders.length,
                     separatorBuilder: (context, index) => const Divider(),
                     itemBuilder: (context, index) {

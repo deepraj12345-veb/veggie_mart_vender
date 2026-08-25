@@ -22,6 +22,7 @@ class _ManageRidersScreenState extends ConsumerState<ManageRidersScreen> {
 
   void _showAddRiderModal() {
     final nameController = TextEditingController();
+    final emailController = TextEditingController();
     final phoneController = TextEditingController();
     final vehicleNoController = TextEditingController();
     final passwordController = TextEditingController();
@@ -54,6 +55,12 @@ class _ManageRidersScreenState extends ConsumerState<ManageRidersScreen> {
                   ),
                   const SizedBox(height: 10),
                   TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(labelText: "Email"),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
                     controller: phoneController,
                     keyboardType: TextInputType.phone,
                     decoration: const InputDecoration(labelText: "Mobile Number"),
@@ -73,11 +80,12 @@ class _ManageRidersScreenState extends ConsumerState<ManageRidersScreen> {
                   CustomButton(
                     label: isSaving ? "Saving..." : "Add Rider",
                     onPressed: isSaving ? null : () async {
-                      if (nameController.text.trim().isNotEmpty && phoneController.text.trim().isNotEmpty) {
+                      if (nameController.text.trim().isNotEmpty && emailController.text.trim().isNotEmpty && phoneController.text.trim().isNotEmpty) {
                         setModalState(() => isSaving = true);
                         final newRider = RiderModel(
                           id: "", // Will be assigned by API
                           name: nameController.text.trim(),
+                          email: emailController.text.trim(),
                           mobileNumber: phoneController.text.trim(),
                           vehicleNumber: vehicleNoController.text.trim(),
                         );

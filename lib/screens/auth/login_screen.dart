@@ -41,6 +41,9 @@ class _LoginScreenState extends State<LoginScreen> {
         if (ApiService.authToken != null) {
           await prefs.setString('vendorToken', ApiService.authToken!);
         }
+        if (ApiService.sessionCookie != null) {
+          await prefs.setString('sessionCookie', ApiService.sessionCookie!);
+        }
 
         if (!mounted) return;
         Navigator.pushAndRemoveUntil(

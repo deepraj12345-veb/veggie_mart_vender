@@ -31,7 +31,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     for (int i = 0; i < 4; i++) {
       _focusNodes[i].onKeyEvent = (node, event) {
-        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.backspace) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.backspace) {
           if (_controllers[i].text.isEmpty && i > 0) {
             _focusNodes[i - 1].requestFocus();
             // Optionally clear the previous box for better UX

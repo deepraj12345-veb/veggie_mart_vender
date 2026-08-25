@@ -48,7 +48,13 @@ class _SplashScreenState extends State<SplashScreen>
         final token = prefs.getString('vendorToken');
         if (token != null) {
           ApiService.authToken = token;
-          ApiService.sessionCookie = '__Secure-next-auth.session-token=$token';
+          final savedCookie = prefs.getString('sessionCookie');
+          if (savedCookie != null) {
+            ApiService.sessionCookie = savedCookie;
+          } else {
+            // Fallback for older sessions that didn't save the full cookie
+            ApiService.sessionCookie = 'authjs.session-token=$token; next-auth.session-token=$token';
+          }
         }
       }
 
