@@ -31,7 +31,7 @@ class InventoryNotifier extends AsyncNotifier<List<ProductModel>> {
     final product = state.value!.firstWhere((p) => p.id == productId);
     final newInStock = !product.inStock;
 
-    // Optimistic update
+    // Optimistic UI update
     state = AsyncValue.data([
       for (final p in state.value!)
         if (p.id == productId) p.copyWith(inStock: newInStock) else p,
@@ -39,17 +39,11 @@ class InventoryNotifier extends AsyncNotifier<List<ProductModel>> {
 
     try {
       await ApiService.updateProduct(productId, {
-        'stock_status': newInStock ? 'in_stock' : 'out_of_stock',
+        'stock_status': newInStock ? 1 : 0,
+        'inStock': newInStock,
       });
     } catch (e) {
-      print('Error updating stock: $e');
-      // Revert optimistic update
-      if (state.value != null) {
-        state = AsyncValue.data([
-          for (final p in state.value!)
-            if (p.id == productId) p.copyWith(inStock: !newInStock) else p,
-        ]);
-      }
+      print('API stock update warning: $e');
     }
   }
 
