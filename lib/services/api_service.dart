@@ -136,13 +136,21 @@ class ApiService {
     Map<String, dynamic> data,
   ) async {
     try {
-      final response = await httpClient.patch(
-        Uri.parse('$baseUrl/products/$productId'),
+      final url = Uri.parse('$baseUrl/products/$productId');
+      var response = await httpClient.patch(
+        url,
         headers: _buildHeaders(),
         body: json.encode(data),
       );
-      if (response.statusCode != 200) {
-        throw Exception('Failed to update product');
+      if (response.statusCode == 405) {
+        response = await httpClient.put(
+          url,
+          headers: _buildHeaders(),
+          body: json.encode(data),
+        );
+      }
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Failed to update product. Status: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Network error: $e');
