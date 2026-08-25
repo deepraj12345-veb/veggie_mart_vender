@@ -300,29 +300,48 @@ class ApiService {
   // ==========================================
 
   static Future<void> vendorLogin(String email, String password) async {
-    // Automatically get the root URL by removing '/api' from baseUrl
-    final String rootUrl = baseUrl.replaceAll('/api', '');
-
     print('--- VENDOR LOGIN CALLED ---');
-    print('Attempting to login for email: $email');
+    print('Attempting login for email: $email');
 
-    // Step 1: GET CSRF Token
+    // Method A: Standard REST API Login Endpoint (/api/v1/auth/login)
+    try {
+      final restResponse = await httpClient
+          .post(
+            Uri.parse('$baseUrl/auth/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email, 'password': password}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (restResponse.statusCode == 200 || restResponse.statusCode == 201) {
+        final Map<String, dynamic> data = jsonDecode(restResponse.body);
+        final token = data['token'] ?? data['accessToken'] ?? data['data']?['token'];
+        if (token != null) {
+          authToken = token.toString();
+          sessionCookie = 'authjs.session-token=$token';
+          print('SUCCESS: Standard REST Login Successful!');
+          return;
+        }
+      }
+    } catch (e) {
+      print('Standard REST login attempt notice: $e');
+    }
+
+    // Method B: NextAuth Fallback Login (/api/auth/callback/credentials or /api/auth/callback/vendor)
+    final String rootUrl = baseUrl.replaceAll('/api/v1', '').replaceAll('/api', '');
+
     print('Step 1: Fetching CSRF token from $rootUrl/api/auth/csrf');
     final csrfResponse = await httpClient.get(
       Uri.parse('$rootUrl/api/auth/csrf'),
     );
-    print('CSRF Response Status: ${csrfResponse.statusCode}');
 
     if (csrfResponse.statusCode != 200) {
-      print('CSRF Fetch Failed: ${csrfResponse.body}');
-      throw Exception('Failed to get CSRF token');
+      throw Exception('Failed to connect to authentication server (${csrfResponse.statusCode})');
     }
 
     final Map<String, dynamic> csrfData = jsonDecode(csrfResponse.body);
     final String csrfToken = csrfData['csrfToken'];
-    print('Extracted CSRF Token: $csrfToken');
 
-    // Save cookies from CSRF response (needed for csrf verification)
     String? rawCsrfCookie = csrfResponse.headers['set-cookie'];
     String? cleanedCsrfCookie;
     if (rawCsrfCookie != null) {
@@ -332,7 +351,6 @@ class ApiService {
       for (final match in matches) {
         final key = match.group(1)!;
         final value = match.group(2)!;
-        // Ignore standard cookie attributes
         if (![
           'Path',
           'Expires',
@@ -347,13 +365,10 @@ class ApiService {
       }
       cleanedCsrfCookie = cookies.join('; ');
     }
-    print('Cleaned CSRF Cookie: $cleanedCsrfCookie');
 
-    // Step 2: POST Sign In
-    print('Step 2: Sending credentials to $rootUrl/api/auth/callback/vendor');
     final client = http_pkg.Client();
     final request =
-        http_pkg.Request('POST', Uri.parse('$rootUrl/api/auth/callback/vendor'))
+        http_pkg.Request('POST', Uri.parse('$rootUrl/api/auth/callback/credentials'))
           ..followRedirects = false
           ..headers['Content-Type'] = 'application/json';
 
@@ -374,24 +389,17 @@ class ApiService {
     final loginResponseHeaders = streamResponse.headers;
     client.close();
 
-    print('Login Response Status: $loginResponseStatusCode');
-    print('Login Response Headers: $loginResponseHeaders');
-    print('Login Response Body: $responseBody');
-
-    // Handle NextAuth errors sent via redirect (302)
     if (loginResponseStatusCode == 302 || loginResponseStatusCode == 301) {
       final location = loginResponseHeaders['location'];
       if (location != null && location.contains('error=')) {
         final uri = Uri.parse(location);
         final error = uri.queryParameters['error'];
-        throw Exception('Backend Error: $error');
+        throw Exception('Login failed: Invalid email or password ($error)');
       }
     }
 
-    // Step 3: Extract and save session token
     String? rawCookie = loginResponseHeaders['set-cookie'];
     if (rawCookie != null) {
-      // Look for either next-auth.session-token or authjs.session-token
       RegExp regExp = RegExp(
         r'((?:__Secure-)?(?:next-auth|authjs)\.session-token)=([^;]+)',
       );
@@ -401,20 +409,13 @@ class ApiService {
         String tokenVal = match.group(2)!;
 
         sessionCookie = '$cookieName=$tokenVal';
-        authToken =
-            tokenVal; // Also store in authToken for shared_prefs compatibility
-
+        authToken = tokenVal;
         print('SUCCESS: Session cookie captured and saved!');
-        print('Session Cookie: $sessionCookie');
         return;
-      } else {
-        print('ERROR: Set-Cookie found, but session-token is missing.');
       }
-    } else {
-      print('ERROR: No set-cookie header returned by backend.');
     }
 
-    String errorMsg = 'Invalid credentials or session token not found.';
+    String errorMsg = 'Invalid email or password.';
     try {
       final loginData = jsonDecode(responseBody);
       if (loginData['error'] != null) {
@@ -422,7 +423,7 @@ class ApiService {
       }
     } catch (_) {}
 
-    throw Exception('Login failed: $errorMsg');
+    throw Exception(errorMsg);
   }
 
   // ==========================================
