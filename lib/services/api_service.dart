@@ -84,7 +84,7 @@ class ApiService {
 
   static Future<List<ProductModel>> fetchProducts({String search = ''}) async {
     try {
-      final uri = Uri.parse('$baseUrl/vendor-add-products').replace(
+      final uri = Uri.parse('$baseUrl/products').replace(
         queryParameters: {
           if (search.isNotEmpty) 'search': search,
           'limit':
@@ -113,7 +113,7 @@ class ApiService {
   static Future<ProductModel> createProduct(ProductModel product) async {
     try {
       final response = await httpClient.post(
-        Uri.parse('$baseUrl/vendor-add-products'),
+        Uri.parse('$baseUrl/products'),
         headers: _buildHeaders(),
         body: json.encode(product.toJson()),
       );
@@ -137,7 +137,7 @@ class ApiService {
   ) async {
     try {
       final response = await httpClient.patch(
-        Uri.parse('$baseUrl/vendor-add-products/$productId'),
+        Uri.parse('$baseUrl/products/$productId'),
         headers: _buildHeaders(),
         body: json.encode(data),
       );
@@ -152,7 +152,7 @@ class ApiService {
   static Future<void> deleteProduct(String productId) async {
     try {
       final response = await httpClient.delete(
-        Uri.parse('$baseUrl/vendor-add-products/$productId'),
+        Uri.parse('$baseUrl/products/$productId'),
         headers: _buildHeaders(),
       );
       if (response.statusCode != 200 && response.statusCode != 204) {
@@ -166,7 +166,7 @@ class ApiService {
   static Future<List<String>> fetchCategories() async {
     try {
       final response = await httpClient.get(
-        Uri.parse('$baseUrl/vendor-categories'),
+        Uri.parse('$baseUrl/categories'),
         headers: _buildHeaders(),
       );
       if (response.statusCode == 200) {
