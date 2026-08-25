@@ -65,30 +65,40 @@ class _InventoryItemCardState extends ConsumerState<InventoryItemCard> {
       borderColor: product.inStock ? AppColors.border : AppColors.errorLight,
       child: Row(
         children: [
-          // Product Emoji / Icon
           Container(
-            width: 44,
-            height: 44,
+            width: 48,
+            height: 48,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: product.inStock ? AppColors.primaryLight : AppColors.errorLight,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: product.imageUrl.length > 2 
+            child: product.imageUrl.startsWith('http://') || product.imageUrl.startsWith('https://')
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      File(product.imageUrl),
+                    child: Image.network(
+                      product.imageUrl,
                       fit: BoxFit.cover,
-                      width: 44,
-                      height: 44,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: AppColors.error),
+                      width: 48,
+                      height: 48,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.shopping_basket, color: AppColors.primary),
                     ),
                   )
-                : Text(
-                    product.imageUrl,
-                    style: const TextStyle(fontSize: 24),
-                  ),
+                : product.imageUrl.length > 5
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(product.imageUrl),
+                          fit: BoxFit.cover,
+                          width: 48,
+                          height: 48,
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.shopping_basket, color: AppColors.primary),
+                        ),
+                      )
+                    : Text(
+                        product.imageUrl.isNotEmpty ? product.imageUrl : '🥦',
+                        style: const TextStyle(fontSize: 24),
+                      ),
           ),
           const SizedBox(width: 10),
 

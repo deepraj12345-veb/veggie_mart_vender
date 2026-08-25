@@ -38,14 +38,27 @@ class ProductModel {
   }
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    String img = '';
+    if (json['product_image'] != null && json['product_image'].toString().isNotEmpty) {
+      img = json['product_image'].toString();
+    } else if (json['image_url'] != null && json['image_url'].toString().isNotEmpty) {
+      img = json['image_url'].toString();
+    } else if (json['product_images'] != null && json['product_images'].toString().isNotEmpty) {
+      img = json['product_images'].toString();
+    } else if (json['imageUrl'] != null && json['imageUrl'].toString().isNotEmpty) {
+      img = json['imageUrl'].toString();
+    } else if (json['images'] is List && (json['images'] as List).isNotEmpty) {
+      img = (json['images'] as List).first.toString();
+    }
+
     return ProductModel(
       id: json['_id'] ?? json['id'] ?? '',
       name: json['product_name'] ?? json['name'] ?? '',
       category: json['category'] ?? '',
       price: (json['selling_price'] ?? json['price'] ?? 0.0).toDouble(),
-      unit: json['volume'] ?? json['unit'] ?? '',
-      imageUrl: json['product_images'] ?? json['imageUrl'] ?? '',
-      inStock: json['stock_status'] == 'in_stock' || (json['inStock'] ?? true),
+      unit: json['quantity'] ?? json['volume'] ?? json['unit'] ?? '',
+      imageUrl: img,
+      inStock: json['stock_status'] == 1 || json['stock_status'] == 'in_stock' || (json['inStock'] ?? true),
     );
   }
 
