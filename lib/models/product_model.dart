@@ -6,6 +6,8 @@ class ProductModel {
   final String unit;
   final String imageUrl;
   final bool inStock;
+  final String? vendorId;
+  final String? vendorShopName;
 
   const ProductModel({
     required this.id,
@@ -15,6 +17,8 @@ class ProductModel {
     required this.unit,
     required this.imageUrl,
     this.inStock = true,
+    this.vendorId,
+    this.vendorShopName,
   });
 
   ProductModel copyWith({
@@ -25,6 +29,8 @@ class ProductModel {
     String? unit,
     String? imageUrl,
     bool? inStock,
+    String? vendorId,
+    String? vendorShopName,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -34,6 +40,8 @@ class ProductModel {
       unit: unit ?? this.unit,
       imageUrl: imageUrl ?? this.imageUrl,
       inStock: inStock ?? this.inStock,
+      vendorId: vendorId ?? this.vendorId,
+      vendorShopName: vendorShopName ?? this.vendorShopName,
     );
   }
 
@@ -51,6 +59,17 @@ class ProductModel {
       img = (json['images'] as List).first.toString();
     }
 
+    String vId = '';
+    if (json['vendor_id'] != null) {
+      if (json['vendor_id'] is Map) {
+        vId = (json['vendor_id']['_id'] ?? json['vendor_id']['id'] ?? '').toString();
+      } else {
+        vId = json['vendor_id'].toString();
+      }
+    } else if (json['vendorId'] != null) {
+      vId = json['vendorId'].toString();
+    }
+
     return ProductModel(
       id: json['_id'] ?? json['id'] ?? '',
       name: json['product_name'] ?? json['name'] ?? '',
@@ -59,6 +78,8 @@ class ProductModel {
       unit: json['quantity'] ?? json['volume'] ?? json['unit'] ?? '',
       imageUrl: img,
       inStock: json['stock_status'] == 1 || json['stock_status'] == 'in_stock' || (json['inStock'] ?? true),
+      vendorId: vId,
+      vendorShopName: json['vendor_shop_name']?.toString(),
     );
   }
 
@@ -71,6 +92,8 @@ class ProductModel {
       'volume': unit,
       'product_images': imageUrl,
       'stock_status': inStock ? 'in_stock' : 'out_of_stock',
+      if (vendorId != null && vendorId!.isNotEmpty) 'vendor_id': vendorId,
+      if (vendorShopName != null && vendorShopName!.isNotEmpty) 'vendor_shop_name': vendorShopName,
     };
   }
 }

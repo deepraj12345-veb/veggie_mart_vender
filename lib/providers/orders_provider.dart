@@ -81,8 +81,6 @@ class OrdersNotifier extends AsyncNotifier<List<OrderModel>> {
             if (order.id == orderId)
               order.copyWith(
                 status: OrderStatus.ready,
-                deliveryBoyName: "Uday Bharat (Delivery)",
-                deliveryBoyPhone: "+91 9811223344",
               )
             else
               order,
@@ -96,8 +94,6 @@ class OrdersNotifier extends AsyncNotifier<List<OrderModel>> {
             if (order.id == orderId)
               order.copyWith(
                 status: OrderStatus.ready,
-                deliveryBoyName: "Uday Bharat (Delivery)",
-                deliveryBoyPhone: "+91 9811223344",
               )
             else
               order,

@@ -44,7 +44,7 @@ class _OrdersDashboardScreenState extends ConsumerState<OrdersDashboardScreen> w
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Are you sure you want to handover this order to the Delivery Boy (${order.deliveryBoyName ?? 'Uday Bharat'})?", style: AppTextStyles.bodyMedium),
+                Text("Are you sure you want to handover this order to the Delivery Boy (${order.deliveryBoyName ?? 'Assigned Rider'})?", style: AppTextStyles.bodyMedium),
               ],
             ),
           ),

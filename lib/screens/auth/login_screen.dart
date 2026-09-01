@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../consts/app_colors.dart';
 import '../main_nav_screen.dart';
 import '../../services/api_service.dart';
+import '../../providers/profile_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -35,9 +37,35 @@ class _LoginScreenState extends State<LoginScreen> {
       try {
         await ApiService.vendorLogin(email, password);
 
-        // Save auth state
         final prefs = await SharedPreferences.getInstance();
+        final String rawEmail = email.trim();
+        final String prefix = rawEmail.contains('@') ? rawEmail.split('@')[0] : rawEmail;
+        final String capitalized = prefix.isNotEmpty
+            ? prefix[0].toUpperCase() + prefix.substring(1)
+            : prefix;
+        
+        final String formattedVendorName = capitalized;
+        final String formattedStoreName = "$capitalized Veggie Mart";
+        
         await prefs.setBool('isVendorLoggedIn', true);
+        await prefs.setString('vendorName', formattedVendorName);
+        await prefs.setString('vendorPhone', rawEmail);
+        await prefs.setString('storeName', formattedStoreName);
+        await prefs.setString('vendorEmail', rawEmail);
+        
+        ApiService.vendorName = formattedVendorName;
+        ApiService.vendorPhone = rawEmail;
+        ApiService.storeName = formattedStoreName;
+        ApiService.currentVendorEmail = rawEmail;
+        ApiService.currentVendorId = 'VENDOR_${rawEmail.hashCode.abs()}';
+
+        // Update Riverpod ProfileNotifier immediately
+        ref.read(profileProvider.notifier).updateProfile(
+          vendorName: formattedVendorName,
+          phoneNumber: rawEmail,
+          storeName: formattedStoreName,
+        );
+
         if (ApiService.authToken != null) {
           await prefs.setString('vendorToken', ApiService.authToken!);
         }

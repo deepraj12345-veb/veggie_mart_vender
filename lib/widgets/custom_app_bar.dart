@@ -4,6 +4,7 @@ import '../consts/app_colors.dart';
 import '../consts/app_text_styles.dart';
 import '../providers/store_provider.dart';
 import '../providers/localization_provider.dart';
+import '../providers/profile_provider.dart';
 import '../screens/dashboard/notifications_screen.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -21,6 +22,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isStoreOpen = ref.watch(storeStatusProvider);
+    final profile = ref.watch(profileProvider);
     final tr = ref.watch(translationProvider);
 
     return AppBar(
@@ -44,10 +46,24 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              title,
-              style: AppTextStyles.heading1,
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  profile.storeName.isNotEmpty ? profile.storeName : title,
+                  style: AppTextStyles.heading1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  profile.vendorName.isNotEmpty ? profile.vendorName : "Vendor Profile",
+                  style: AppTextStyles.badgeText.copyWith(
+                    color: AppColors.primaryDark,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
         ],
