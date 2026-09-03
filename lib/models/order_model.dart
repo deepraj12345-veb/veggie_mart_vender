@@ -85,6 +85,36 @@ class OrderModel {
     );
   }
 
+  static String _formatDate(dynamic dateStr) {
+    if (dateStr == null) return '';
+    try {
+      final DateTime dt = DateTime.parse(dateStr.toString()).toLocal();
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sept',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
+      final String month = months[dt.month - 1];
+      final String hour = dt.hour > 12
+          ? (dt.hour - 12).toString()
+          : (dt.hour == 0 ? '12' : dt.hour.toString());
+      final String minute = dt.minute.toString().padLeft(2, '0');
+      final String ampm = dt.hour >= 12 ? 'pm' : 'am';
+      return '${dt.day} $month ${dt.year} at $hour:$minute $ampm';
+    } catch (_) {
+      return dateStr.toString();
+    }
+  }
+
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     int statusInt = json['status'] ?? -1;
     String statusStr = json['orderStatus'] ?? '';
@@ -97,6 +127,7 @@ class OrderModel {
         case 'packing':
         case 'order confirmed':
         case 'preparing':
+        case 'accepted':
           mappedStatus = OrderStatus.preparing;
           break;
         case 'ready':
@@ -131,24 +162,38 @@ class OrderModel {
       } catch (_) {}
     }
 
-    final shippingAddress = json['shippingAddress'] ?? {};
+    final shippingAddress = json['shippingAddress'] is Map ? json['shippingAddress'] : {};
     final user = json['user_id'] is Map ? json['user_id'] : {};
 
+    final String mobile = (user['mobile_no'] ??
+            shippingAddress['mobile'] ??
+            shippingAddress['phone'] ??
+            json['customerPhone'] ??
+            '')
+        .toString();
+    final String rawName = (user['name'] ??
+            shippingAddress['fullName'] ??
+            json['customerName'] ??
+            '')
+        .toString()
+        .trim();
+    final String name = rawName.isNotEmpty
+        ? rawName
+        : (mobile.isNotEmpty ? 'Customer ($mobile)' : 'Customer');
+
+    final deliveryBoy = json['delivery_boy_id'] is Map ? json['delivery_boy_id'] : {};
+
     return OrderModel(
-      id: json['_id'] ?? json['id'] ?? '',
-      customerName:
-          user['name'] ??
-          shippingAddress['fullName'] ??
-          json['customerName'] ??
-          'Unknown Customer',
-      customerPhone: user['mobile_no'] ?? shippingAddress['phone'] ?? json['customerPhone'] ?? '',
-      dateTime: json['createdAt'] ?? json['dateTime'] ?? '',
+      id: json['order_number'] ?? json['_id'] ?? json['id'] ?? '',
+      customerName: name,
+      customerPhone: mobile,
+      dateTime: _formatDate(json['createdAt'] ?? json['dateTime']),
       items: parsedItems,
       totalAmount: (json['total_amount'] ?? json['totalAmount'] ?? 0.0)
           .toDouble(),
       status: mappedStatus,
-      deliveryBoyName: json['deliveryBoyName'],
-      deliveryBoyPhone: json['deliveryBoyPhone'],
+      deliveryBoyName: deliveryBoy['name'] ?? json['deliveryBoyName'],
+      deliveryBoyPhone: deliveryBoy['mobile'] ?? json['deliveryBoyPhone'],
       otp: json['otp']?.toString() ?? '1234',
     );
   }

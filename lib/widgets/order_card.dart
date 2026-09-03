@@ -39,12 +39,16 @@ class OrderCard extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    Text(
-                      order.id,
-                      style: AppTextStyles.heading2.copyWith(color: AppColors.primary),
+                    Flexible(
+                      child: Text(
+                        order.id,
+                        style: AppTextStyles.heading2.copyWith(color: AppColors.primary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    Flexible(child: _buildStatusBadge()),
+                    _buildStatusBadge(),
                   ],
                 ),
               ),
@@ -52,6 +56,8 @@ class OrderCard extends StatelessWidget {
               Text(
                 order.dateTime,
                 style: AppTextStyles.bodySmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

@@ -5,7 +5,11 @@ import '../../models/order_model.dart';
 import '../../widgets/custom_button.dart';
 
 class OrderDetailsModal {
-  static void show(BuildContext context, OrderModel order) {
+  static void show(
+    BuildContext context,
+    OrderModel order, {
+    VoidCallback? onAssignRider,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -59,15 +63,50 @@ class OrderDetailsModal {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
+              if (order.customerPhone.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2, bottom: 2),
+                  child: Text(
+                    "Phone: ${order.customerPhone}",
+                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                  ),
+                ),
               Text(
                 "Order Date: ${order.dateTime}",
                 style: AppTextStyles.bodySmall,
               ),
+              if (order.deliveryBoyName != null) ...[
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.delivery_dining, size: 18, color: AppColors.primary),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          "Assigned Rider: ${order.deliveryBoyName} (${order.deliveryBoyPhone ?? ''})",
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.primaryDark,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
               const Divider(color: AppColors.divider),
               const SizedBox(height: 10),
 
-              // Item List: Sabzi/Phal name, Quantity, Price
+              // Item List
               Text("Ordered Items (${order.totalItemsCount})", style: AppTextStyles.heading3),
               const SizedBox(height: 8),
               ConstrainedBox(
@@ -103,7 +142,7 @@ class OrderDetailsModal {
               const Divider(color: AppColors.divider),
               const SizedBox(height: 10),
 
-              // Footer: Total Bill Amount & Call Delivery Boy
+              // Footer: Total Bill Amount & Assign/Call Delivery Boy
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -120,15 +159,16 @@ class OrderDetailsModal {
                 children: [
                   Expanded(
                     child: CustomButton(
-                      label: "Call Delivery Boy",
+                      label: order.deliveryBoyName != null
+                          ? "Assigned: ${order.deliveryBoyName}"
+                          : "Call / Assign Delivery Boy",
                       onPressed: () {
                         Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Calling Delivery Boy (${order.deliveryBoyName ?? 'Uday Bharat'})..."),
-                            backgroundColor: AppColors.primaryDark,
-                          ),
-                        );
+                        Future.microtask(() {
+                          if (onAssignRider != null) {
+                            onAssignRider();
+                          }
+                        });
                       },
                       backgroundColor: AppColors.primary,
                       icon: Icons.delivery_dining,

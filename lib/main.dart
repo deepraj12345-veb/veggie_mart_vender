@@ -20,7 +20,6 @@ class VegKingVendorApp extends StatelessWidget {
       title: 'Veg King Vendor',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      builder: (context, child) => ExcludeSemantics(child: child!),
       home: const SplashScreen(),
     );
   }

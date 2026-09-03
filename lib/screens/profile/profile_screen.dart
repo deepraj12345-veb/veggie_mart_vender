@@ -8,6 +8,8 @@ import '../../widgets/custom_app_bar.dart';
 import '../../widgets/reusable_card.dart';
 import '../../widgets/custom_button.dart';
 import '../auth/login_screen.dart';
+import '../../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'edit_profile_modal.dart';
 import 'help_support_screen.dart';
 import 'manage_riders_screen.dart';
@@ -296,7 +298,16 @@ class ProfileScreen extends ConsumerWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.error,
                         ),
-                        onPressed: () {
+                        onPressed: () async {
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.clear();
+
+                          ApiService.sessionCookie = null;
+                          ApiService.authToken = null;
+
+                          ref.invalidate(profileProvider);
+
+                          if (!context.mounted) return;
                           Navigator.pushAndRemoveUntil(
                             context,
                             MaterialPageRoute(

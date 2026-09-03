@@ -74,8 +74,15 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: selectedCategory,
+                          isExpanded: true,
                           items: categories
-                              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                              .map((c) => DropdownMenuItem(
+                                    value: c,
+                                    child: Text(
+                                      c,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ))
                               .toList(),
                           onChanged: (val) => setModalState(() => selectedCategory = val!),
                           decoration: const InputDecoration(labelText: "Category"),

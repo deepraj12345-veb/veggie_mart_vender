@@ -29,20 +29,20 @@ class RiderModel {
 
   factory RiderModel.fromJson(Map<String, dynamic> json) {
     return RiderModel(
-      id: json['_id'] ?? '',
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      mobileNumber: json['mobile_number'] ?? '',
-      vehicleType: json['vehicle_type'] ?? 'Bike',
-      vehicleNumber: json['vehicle_number'] ?? '',
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      name: (json['name'] ?? json['full_name'] ?? 'Delivery Rider').toString(),
+      email: (json['email'] ?? '').toString(),
+      mobileNumber: (json['mobile_number'] ?? json['mobile'] ?? json['phone'] ?? '').toString(),
+      vehicleType: (json['vehicle_type'] ?? json['vehicle'] ?? 'Bike').toString(),
+      vehicleNumber: (json['vehicle_number'] ?? json['vehicle_no'] ?? '').toString(),
       vendorId: json['vendor_id'] is Map
           ? json['vendor_id']['_id']?.toString()
           : json['vendor_id']?.toString(),
-      licenceImage: json['licence_image'],
-      profileImage: json['profile_image'],
+      licenceImage: json['licence_image']?.toString(),
+      profileImage: json['profile_image']?.toString(),
       isActive: json['is_active']?.toString() ?? '1',
       isVerified: json['is_verified']?.toString() ?? '1',
-      walletBalance: (json['wallet_balance'] ?? 0).toDouble(),
+      walletBalance: double.tryParse(json['wallet_balance']?.toString() ?? '0') ?? 0.0,
     );
   }
 

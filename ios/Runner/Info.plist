@@ -26,6 +26,12 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Veggie Mart Vendor requires location access to manage store location and delivery tracking.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Veggie Mart Vendor requires background location access to manage store location and delivery tracking.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Veggie Mart Vendor requires location access to manage store location and delivery tracking.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
