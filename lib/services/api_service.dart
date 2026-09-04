@@ -191,11 +191,13 @@ class ApiService {
     currentVendorEmail = rawEmail;
 
     final loginEndpoints = [
-      '$rootUrl/vendor/login',
       '$baseUrl/auth/login',
+      '$rootUrl/vendor/login',
       '$vendorBaseUrl/login',
       '$baseUrl/login',
     ];
+
+    String? serverErrorMessage;
 
     for (final url in loginEndpoints) {
       try {
@@ -223,16 +225,26 @@ class ApiService {
           }
           await fetchVendorProfile();
           return;
+        } else {
+          try {
+            final Map<String, dynamic> errData = jsonDecode(response.body);
+            final msg = errData['error'] ?? errData['message'];
+            if (msg != null && msg.toString().isNotEmpty) {
+              serverErrorMessage = msg.toString();
+            }
+          } catch (_) {}
         }
       } catch (e) {
         print('Login attempt to $url skipped/CORS: $e');
       }
     }
 
-    // Default Token assignment & API profile fetch fallback
-    authToken = 'vendor_token_${DateTime.now().millisecondsSinceEpoch}';
-    sessionCookie = 'authjs.session-token=$authToken';
-    await fetchVendorProfile();
+    // STRICT: DO NOT ALLOW FAKE/DUMMY LOGIN FALLBACK!
+    if (serverErrorMessage != null && serverErrorMessage.isNotEmpty) {
+      throw Exception(serverErrorMessage);
+    } else {
+      throw Exception('Invalid email or password. Please check credentials.');
+    }
   }
 
   // --------------------------------------------------------------
