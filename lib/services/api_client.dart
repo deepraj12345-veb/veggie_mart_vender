@@ -14,19 +14,9 @@ class ApiClient {
 
   late final Dio _dio;
 
-  // --- Environment URLs ---
-  static String get localBaseUrl {
-    if (!kIsWeb && Platform.isAndroid) {
-      return 'http://10.0.2.2:3000/api/v1';
-    }
-    return 'http://localhost:3000/api/v1';
-  }
+  static String get localBaseUrl => 'http://localhost:3000/api/v1';
 
-
-
-
-  static const String prodBaseUrl =
-      'http://localhost:3000/api/v1';
+  static const String prodBaseUrl = 'http://localhost:3000/api/v1';
 
   /// Easily switch between [ApiEnvironment.local] and [ApiEnvironment.production]
   static ApiEnvironment environment = ApiEnvironment.local;
@@ -37,8 +27,6 @@ class ApiClient {
     if (_customBaseUrl != null) return _customBaseUrl!;
     return environment == ApiEnvironment.local ? localBaseUrl : prodBaseUrl;
   }
-
-
 
   static set baseUrl(String value) {
     _customBaseUrl = value;

@@ -10,6 +10,9 @@ import '../../widgets/reusable_card.dart';
 import '../../widgets/custom_button.dart';
 import 'bank_details_modal.dart';
 
+import '../../providers/profile_provider.dart';
+import '../../services/api_service.dart';
+
 class WalletScreen extends ConsumerWidget {
   const WalletScreen({super.key});
 
@@ -50,7 +53,7 @@ class WalletScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "${tr("Available Balance")}: ₹${availableBalance.toInt()}",
+                  "${tr("Available Balance")}: ₹${availableBalance.toStringAsFixed(2)}",
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -75,7 +78,7 @@ class WalletScreen extends ConsumerWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        "🎉 ₹${amount.toInt()} withdrawal request submitted! Money will reach your bank shortly.",
+                        "🎉 ₹${amount.toStringAsFixed(2)} withdrawal request submitted! Money will reach your bank shortly.",
                       ),
                       backgroundColor: AppColors.success,
                     ),
@@ -105,7 +108,14 @@ class WalletScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final walletState = ref.watch(walletProvider);
+    final profileState = ref.watch(profileProvider);
     final tr = ref.watch(translationProvider);
+
+    final double availableBalance = profileState.walletBalance > 0
+        ? profileState.walletBalance
+        : (walletState.availableBalance > 0
+            ? walletState.availableBalance
+            : ApiService.walletBalance);
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -123,7 +133,7 @@ class WalletScreen extends ConsumerWidget {
                 Expanded(
                   child: StatSummaryCard(
                     title: tr("Today's Earnings"),
-                    value: "₹${walletState.todayEarnings.toInt()}",
+                    value: "₹${walletState.todayEarnings.toStringAsFixed(2)}",
                     icon: Icons.trending_up,
                     iconColor: AppColors.success,
                     backgroundColor: AppColors.successLight,
@@ -133,7 +143,7 @@ class WalletScreen extends ConsumerWidget {
                 Expanded(
                   child: StatSummaryCard(
                     title: tr("Available Balance"),
-                    value: "₹${walletState.availableBalance.toInt()}",
+                    value: "₹${availableBalance.toStringAsFixed(2)}",
                     icon: Icons.account_balance_wallet,
                     iconColor: AppColors.primary,
                     backgroundColor: AppColors.primaryLight,
@@ -160,7 +170,7 @@ class WalletScreen extends ConsumerWidget {
               onPressed: () => _showWithdrawDialog(
                 context,
                 ref,
-                walletState.availableBalance,
+                availableBalance,
                 tr,
               ),
               icon: Icons.payments,

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/transaction_model.dart';
+import '../services/api_service.dart';
 
 class WalletState {
   final double todayEarnings;
@@ -27,11 +28,32 @@ class WalletState {
 
 class WalletNotifier extends Notifier<WalletState> {
   @override
-  WalletState build() => const WalletState(
-        todayEarnings: 0.0,
-        availableBalance: 0.0,
-        transactions: _initialTransactions,
-      );
+  WalletState build() {
+    _loadAndSync();
+    return WalletState(
+      todayEarnings: 0.0,
+      availableBalance: ApiService.walletBalance,
+      transactions: _initialTransactions,
+    );
+  }
+
+  Future<void> _loadAndSync() async {
+    try {
+      await ApiService.loadFromPrefs();
+      double balance = ApiService.walletBalance;
+      if (balance == 0.0) {
+        final vendorData = await ApiService.fetchVendorProfile();
+        if (vendorData.isNotEmpty) {
+          balance = ApiService.walletBalance;
+        }
+      }
+      state = state.copyWith(availableBalance: balance);
+    } catch (_) {}
+  }
+
+  void syncBalance(double balance) {
+    state = state.copyWith(availableBalance: balance);
+  }
 
   void addTransaction(String orderId, double amount) {
     final newTxn = TransactionModel(
