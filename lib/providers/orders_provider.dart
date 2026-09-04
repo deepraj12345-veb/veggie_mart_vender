@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/order_model.dart';
 import '../models/rider_model.dart';
@@ -5,9 +6,25 @@ import '../services/api_service.dart';
 import 'wallet_provider.dart';
 
 class OrdersNotifier extends AsyncNotifier<List<OrderModel>> {
+  Timer? _autoRefreshTimer;
+
   @override
   Future<List<OrderModel>> build() async {
+    _startAutoRefresh();
+    ref.onDispose(() {
+      _autoRefreshTimer?.cancel();
+    });
     return _fetchOrders();
+  }
+
+  void _startAutoRefresh() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+      try {
+        final newOrders = await _fetchOrders();
+        state = AsyncValue.data(newOrders);
+      } catch (_) {}
+    });
   }
 
   Future<List<OrderModel>> _fetchOrders() async {

@@ -453,15 +453,56 @@ class ApiService {
     return [];
   }
 
-  static Future<void> updateOrderStatus(String orderId, int status) async {
-    try {
-      await http.patch(
-        Uri.parse('$baseUrl/orders/$orderId/status'),
-        headers: _buildHeaders(),
-        body: json.encode({'status': status}),
-      ).timeout(const Duration(seconds: 8));
-    } catch (e) {
-      print('updateOrderStatus API error: $e');
+  static Future<void> updateOrderStatus(String orderId, dynamic status) async {
+    final statusStrMap = {
+      0: 'Order Placed',
+      1: 'Packing',
+      2: 'Ready',
+      3: 'Delivered',
+      4: 'Delivered',
+      5: 'Cancelled',
+    };
+
+    String statusStr = status is String
+        ? status
+        : (statusStrMap[status] ?? 'Packing');
+
+    int statusInt = status is int
+        ? status
+        : (status == 'Order Placed'
+            ? 0
+            : (status == 'Packing' || status == 'Preparing' || status == 'Accepted'
+                ? 1
+                : (status == 'Ready' ? 2 : (status == 'Delivered' || status == 'Completed' ? 4 : 0))));
+
+    final cleanId = orderId.replaceAll('#', '');
+
+    final statusEndpoints = [
+      '$baseUrl/orders/$cleanId/status',
+      '$baseUrl/orders/$cleanId',
+      '$rootUrl/api/orders/$cleanId/status',
+      '$rootUrl/api/orders/$cleanId',
+    ];
+
+    for (final url in statusEndpoints) {
+      try {
+        final response = await http.patch(
+          Uri.parse(url),
+          headers: _buildHeaders(),
+          body: json.encode({
+            'status': statusInt,
+            'orderStatus': statusStr,
+            'isAdmin': true,
+          }),
+        ).timeout(const Duration(seconds: 8));
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          print('SUCCESS: Updated order $orderId status to $statusStr ($statusInt) via $url');
+          return;
+        }
+      } catch (e) {
+        print('updateOrderStatus to $url skipped: $e');
+      }
     }
   }
 
