@@ -16,6 +16,11 @@ class ApiService {
   static String? vendorPhone;
   static String? storeName;
   static String? storeAddress;
+  static String city = '';
+  static String stateName = '';
+  static double walletBalance = 0.0;
+  static bool isVerified = true;
+  static String createdAt = '';
 
   static String get rootUrl => ApiClient.rootUrl;
   static String get baseUrl => '$rootUrl/api/v1';
@@ -33,6 +38,27 @@ class ApiService {
       headers['Cookie'] = sessionCookie!;
     }
     return headers;
+  }
+
+  static Future<void> clearAllVendorData() async {
+    authToken = null;
+    sessionCookie = null;
+    currentVendorId = null;
+    currentVendorEmail = null;
+    vendorName = null;
+    vendorPhone = null;
+    storeName = null;
+    storeAddress = null;
+    city = '';
+    stateName = '';
+    walletBalance = 0.0;
+    isVerified = true;
+    createdAt = '';
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+    } catch (_) {}
   }
 
   static void parseAndSaveVendorData(Map<String, dynamic> vendorObj) {
@@ -61,13 +87,26 @@ class ApiService {
       storeName = sn;
     }
 
+    city = vendorObj['city']?.toString() ?? '';
+    stateName = vendorObj['state']?.toString() ?? '';
+
     final addr = vendorObj['address']?.toString() ?? '';
-    final city = vendorObj['city']?.toString() ?? '';
-    final state = vendorObj['state']?.toString() ?? '';
     if (addr.isNotEmpty) {
       storeAddress = addr;
-    } else if (city.isNotEmpty || state.isNotEmpty) {
-      storeAddress = [city, state].where((s) => s.isNotEmpty).join(', ');
+    } else if (city.isNotEmpty || stateName.isNotEmpty) {
+      storeAddress = [city, stateName].where((s) => s.isNotEmpty).join(', ');
+    }
+
+    if (vendorObj['wallet_balance'] != null) {
+      walletBalance = double.tryParse(vendorObj['wallet_balance'].toString()) ?? 0.0;
+    }
+
+    if (vendorObj['is_verified'] != null) {
+      isVerified = vendorObj['is_verified'].toString() == '1' || vendorObj['is_verified'] == true;
+    }
+
+    if (vendorObj['created_at'] != null || vendorObj['createdAt'] != null) {
+      createdAt = (vendorObj['created_at'] ?? vendorObj['createdAt']).toString();
     }
   }
 
@@ -80,6 +119,11 @@ class ApiService {
       if (storeAddress != null) await prefs.setString('storeAddress', storeAddress!);
       if (currentVendorEmail != null) await prefs.setString('currentVendorEmail', currentVendorEmail!);
       if (currentVendorId != null) await prefs.setString('currentVendorId', currentVendorId!);
+      if (city.isNotEmpty) await prefs.setString('vendorCity', city);
+      if (stateName.isNotEmpty) await prefs.setString('vendorState', stateName);
+      await prefs.setDouble('vendorWallet', walletBalance);
+      await prefs.setBool('vendorIsVerified', isVerified);
+      if (createdAt.isNotEmpty) await prefs.setString('vendorCreatedAt', createdAt);
     } catch (_) {}
   }
 
@@ -92,6 +136,11 @@ class ApiService {
       storeAddress = prefs.getString('storeAddress') ?? storeAddress;
       currentVendorEmail = prefs.getString('currentVendorEmail') ?? currentVendorEmail;
       currentVendorId = prefs.getString('currentVendorId') ?? currentVendorId;
+      city = prefs.getString('vendorCity') ?? city;
+      stateName = prefs.getString('vendorState') ?? stateName;
+      walletBalance = prefs.getDouble('vendorWallet') ?? walletBalance;
+      isVerified = prefs.getBool('vendorIsVerified') ?? isVerified;
+      createdAt = prefs.getString('vendorCreatedAt') ?? createdAt;
     } catch (_) {}
   }
 
@@ -135,9 +184,11 @@ class ApiService {
 
   static Future<void> vendorLogin(String email, String password) async {
     print('--- 1. VENDOR LOGIN CALL ---');
-    final String rawEmail = email.trim();
+    final String rawEmail = email.trim().toLowerCase();
+    
+    // Clear old vendor data to ensure clean login for new account
+    await clearAllVendorData();
     currentVendorEmail = rawEmail;
-    currentVendorId = 'VENDOR_${rawEmail.hashCode.abs()}';
 
     final loginEndpoints = [
       '$rootUrl/vendor/login',

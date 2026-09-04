@@ -58,13 +58,50 @@ class ProfileScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            profile.vendorName.isNotEmpty
-                                ? profile.vendorName
-                                : profile.storeName,
-                            style: AppTextStyles.heading1,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  profile.vendorName.isNotEmpty
+                                      ? profile.vendorName
+                                      : profile.storeName,
+                                  style: AppTextStyles.heading1,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (profile.isVerified)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.green),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.verified,
+                                        size: 12,
+                                        color: Colors.green,
+                                      ),
+                                      SizedBox(width: 3),
+                                      Text(
+                                        "Verified",
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ),
                           if (profile.email.isNotEmpty)
                             Padding(
@@ -137,7 +174,11 @@ class ProfileScreen extends ConsumerWidget {
                           style: AppTextStyles.bodySmall,
                         ),
                         Text(
-                          profile.storeAddress,
+                          profile.storeAddress.isNotEmpty
+                              ? profile.storeAddress
+                              : profile.city.isNotEmpty
+                                  ? "${profile.city}${profile.stateName.isNotEmpty ? ', ${profile.stateName}' : ''}"
+                                  : tr("No address specified"),
                           style: AppTextStyles.bodyMedium,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -154,6 +195,57 @@ class ProfileScreen extends ConsumerWidget {
                     onPressed: () {
                       EditProfileModal.show(context, ref);
                     },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Wallet Balance Card
+            ReusableCard(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.account_balance_wallet_outlined,
+                        color: AppColors.primary,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            tr("Wallet Balance"),
+                            style: AppTextStyles.bodySmall,
+                          ),
+                          Text(
+                            "₹${profile.walletBalance.toStringAsFixed(2)}",
+                            style: AppTextStyles.heading2.copyWith(
+                              color: AppColors.primaryDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      tr("Active Wallet"),
+                      style: AppTextStyles.badgeText.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -324,12 +416,7 @@ class ProfileScreen extends ConsumerWidget {
                           backgroundColor: AppColors.error,
                         ),
                         onPressed: () async {
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.clear();
-
-                          ApiService.sessionCookie = null;
-                          ApiService.authToken = null;
-
+                          await ApiService.clearAllVendorData();
                           ref.invalidate(profileProvider);
 
                           if (!context.mounted) return;
