@@ -41,10 +41,10 @@ class ApiService {
     }
 
     final fn = vendorObj['full_name']?.toString() ?? vendorObj['proprietor_name']?.toString() ?? vendorObj['name']?.toString();
-    if (fn != null && fn.isNotEmpty && !fn.toLowerCase().startsWith('vendor')) {
+    if (fn != null && fn.isNotEmpty) {
       vendorName = fn;
     } else if (vendorObj['shop_name'] != null && vendorObj['shop_name'].toString().isNotEmpty) {
-      vendorName = fn ?? vendorObj['shop_name'].toString();
+      vendorName = vendorObj['shop_name'].toString();
     }
 
     if (vendorObj['email'] != null && vendorObj['email'].toString().isNotEmpty) {
@@ -98,8 +98,8 @@ class ApiService {
   static Future<Map<String, dynamic>> fetchVendorProfile() async {
     await loadFromPrefs();
     final profileEndpoints = [
-      if (currentVendorId != null && currentVendorId!.isNotEmpty) '$baseUrl/vendor?vendor_id=$currentVendorId',
       if (currentVendorEmail != null && currentVendorEmail!.isNotEmpty) '$baseUrl/vendor?vendor_id=$currentVendorEmail',
+      if (currentVendorId != null && currentVendorId!.isNotEmpty && !currentVendorId!.startsWith('VENDOR_')) '$baseUrl/vendor?vendor_id=$currentVendorId',
       '$baseUrl/vendor',
       '$rootUrl/api/vendor',
     ];
@@ -117,7 +117,7 @@ class ApiService {
           if (vendorObj is Map<String, dynamic> && vendorObj.isNotEmpty) {
             parseAndSaveVendorData(vendorObj);
             await saveToPrefs();
-            print('SUCCESS: Vendor Profile fetched from $url -> ${vendorObj['full_name']} / ${vendorObj['shop_name']}');
+            print('SUCCESS: Real Vendor Profile fetched from $url -> Name: $vendorName, Shop: $storeName, Phone: $vendorPhone, Address: $storeAddress');
             return vendorObj;
           }
         }
