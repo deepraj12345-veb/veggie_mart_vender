@@ -251,9 +251,18 @@ class ApiService {
   // 2. VENDOR DASHBOARD (GET https://vegimart-backend.vercel.app/vendor/dashboard)
   // --------------------------------------------------------------
   static Future<Map<String, dynamic>> fetchVendorDashboard() async {
+    await loadFromPrefs();
+    final Map<String, String> queryParams = {};
+    if (currentVendorEmail != null && currentVendorEmail!.isNotEmpty) {
+      queryParams['vendor_id'] = currentVendorEmail!;
+    } else if (currentVendorId != null && currentVendorId!.isNotEmpty) {
+      queryParams['vendor_id'] = currentVendorId!;
+    }
+
     final dashboardUrls = [
-      '$rootUrl/vendor/dashboard',
-      '$vendorBaseUrl/dashboard',
+      Uri.parse('$baseUrl/vendor/dashboard').replace(queryParameters: queryParams).toString(),
+      Uri.parse('$rootUrl/vendor/dashboard').replace(queryParameters: queryParams).toString(),
+      Uri.parse('$vendorBaseUrl/dashboard').replace(queryParameters: queryParams).toString(),
     ];
 
     for (final url in dashboardUrls) {
@@ -265,6 +274,11 @@ class ApiService {
 
         if (response.statusCode == 200) {
           final Map<String, dynamic> data = jsonDecode(response.body);
+          final Map<String, dynamic> innerData = data['data'] ?? data;
+          if (innerData['vendor'] != null && innerData['vendor'] is Map<String, dynamic>) {
+            parseAndSaveVendorData(innerData['vendor']);
+            await saveToPrefs();
+          }
           print('SUCCESS: Vendor Dashboard fetched from $url');
           return data;
         }
@@ -274,10 +288,11 @@ class ApiService {
     }
 
     final vendorProds = await fetchProducts();
+    final orders = await fetchOrders();
     return {
-      'totalOrders': 2,
+      'totalOrders': orders.length,
       'totalProducts': vendorProds.length,
-      'revenue': 250.0,
+      'revenue': walletBalance,
     };
   }
 
@@ -306,14 +321,22 @@ class ApiService {
   // 4. CUSTOMER / MOBILE APP APIs (GET https://vegimart-backend.vercel.app/api/v1)
   // --------------------------------------------------------------
   static Future<List<ProductModel>> fetchProducts({String search = ''}) async {
+    await loadFromPrefs();
+    final Map<String, String> queryParams = {
+      if (search.isNotEmpty) 'search': search,
+      'limit': '100',
+    };
+    if (currentVendorEmail != null && currentVendorEmail!.isNotEmpty) {
+      queryParams['vendor_id'] = currentVendorEmail!;
+    } else if (currentVendorId != null && currentVendorId!.isNotEmpty) {
+      queryParams['vendor_id'] = currentVendorId!;
+    }
+
     final basePaths = [baseUrl, vendorBaseUrl];
     for (final basePath in basePaths) {
       try {
         final uri = Uri.parse('$basePath/products').replace(
-          queryParameters: {
-            if (search.isNotEmpty) 'search': search,
-            'limit': '100',
-          },
+          queryParameters: queryParams,
         );
 
         final response = await http.get(uri, headers: _buildHeaders()).timeout(const Duration(seconds: 8));
@@ -322,36 +345,14 @@ class ApiService {
           final Map<String, dynamic> data = json.decode(response.body);
           final List<dynamic> items = data['data'] ?? (data is List ? data : []);
           final allProducts = items.map((json) => ProductModel.fromJson(json)).toList();
-
-          // Filter products for logged-in vendor
-          if (currentVendorId != null || storeName != null || vendorName != null) {
-            final vendorFiltered = allProducts.where((p) {
-              if (currentVendorId != null && p.vendorId == currentVendorId) return true;
-              if (storeName != null && p.vendorShopName != null && p.vendorShopName!.toLowerCase().contains(storeName!.toLowerCase())) return true;
-              if (vendorName != null && p.vendorShopName != null && p.vendorShopName!.toLowerCase().contains(vendorName!.toLowerCase())) return true;
-              return false;
-            }).toList();
-
-            if (vendorFiltered.isNotEmpty) {
-              print('SUCCESS: Filtered ${vendorFiltered.length} vendor-specific products');
-              return vendorFiltered;
-            }
-          }
+          return allProducts;
         }
       } catch (e) {
         print('fetchProducts attempt to $basePath/products skipped: $e');
       }
     }
 
-    // Return vendor-isolated list
-    final emailKey = currentVendorEmail ?? 'default';
-    if (!_vendorProductsMap.containsKey(emailKey)) {
-      _vendorProductsMap[emailKey] = [];
-    }
-    
-    final list = _vendorProductsMap[emailKey]!;
-    if (search.isEmpty) return list;
-    return list.where((p) => p.name.toLowerCase().contains(search.toLowerCase())).toList();
+    return [];
   }
 
   static Future<ProductModel> createProduct(ProductModel product) async {
@@ -425,9 +426,19 @@ class ApiService {
   }
 
   static Future<List<OrderModel>> fetchOrders({int page = 1, int limit = 50}) async {
+    await loadFromPrefs();
     try {
+      final Map<String, String> queryParams = {};
+      if (currentVendorEmail != null && currentVendorEmail!.isNotEmpty) {
+        queryParams['vendor_id'] = currentVendorEmail!;
+      } else if (currentVendorId != null && currentVendorId!.isNotEmpty) {
+        queryParams['vendor_id'] = currentVendorId!;
+      }
+
+      final uri = Uri.parse('$baseUrl/orders').replace(queryParameters: queryParams);
+
       final response = await http.get(
-        Uri.parse('$baseUrl/orders'),
+        uri,
         headers: _buildHeaders(),
       ).timeout(const Duration(seconds: 8));
 
@@ -439,7 +450,7 @@ class ApiService {
     } catch (e) {
       print('fetchOrders API error: $e');
     }
-    return _fallbackOrders;
+    return [];
   }
 
   static Future<void> updateOrderStatus(String orderId, int status) async {
