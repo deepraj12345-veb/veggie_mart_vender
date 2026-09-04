@@ -10,6 +10,7 @@ class EditProfileModal {
     final profile = ref.read(profileProvider);
 
     final nameController = TextEditingController(text: profile.vendorName);
+    final emailController = TextEditingController(text: profile.email);
     final phoneController = TextEditingController(text: profile.phoneNumber);
     final storeNameController = TextEditingController(text: profile.storeName);
     final storeAddressController = TextEditingController(text: profile.storeAddress);
@@ -36,7 +37,14 @@ class EditProfileModal {
               
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: "Vendor Name"),
+                decoration: const InputDecoration(labelText: "Vendor / Owner Name"),
+              ),
+              const SizedBox(height: 12),
+              
+              TextField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: "Email Address"),
               ),
               const SizedBox(height: 12),
               
@@ -65,6 +73,7 @@ class EditProfileModal {
                 onPressed: () {
                   ref.read(profileProvider.notifier).updateProfile(
                     vendorName: nameController.text.trim(),
+                    email: emailController.text.trim(),
                     phoneNumber: phoneController.text.trim(),
                     storeName: storeNameController.text.trim(),
                     storeAddress: storeAddressController.text.trim(),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
 import '../models/product_model.dart';
 import '../models/order_model.dart';
@@ -34,8 +35,101 @@ class ApiService {
     return headers;
   }
 
+  static void parseAndSaveVendorData(Map<String, dynamic> vendorObj) {
+    if (vendorObj.containsKey('_id') || vendorObj.containsKey('id')) {
+      currentVendorId = (vendorObj['id'] ?? vendorObj['_id']).toString();
+    }
+
+    final fn = vendorObj['full_name']?.toString() ?? vendorObj['proprietor_name']?.toString() ?? vendorObj['name']?.toString();
+    if (fn != null && fn.isNotEmpty && !fn.toLowerCase().startsWith('vendor')) {
+      vendorName = fn;
+    } else if (vendorObj['shop_name'] != null && vendorObj['shop_name'].toString().isNotEmpty) {
+      vendorName = fn ?? vendorObj['shop_name'].toString();
+    }
+
+    if (vendorObj['email'] != null && vendorObj['email'].toString().isNotEmpty) {
+      currentVendorEmail = vendorObj['email'].toString();
+    }
+
+    final ph = vendorObj['mobile_number']?.toString() ?? vendorObj['mobile_no']?.toString() ?? vendorObj['phone']?.toString();
+    if (ph != null && ph.isNotEmpty) {
+      vendorPhone = ph;
+    }
+
+    final sn = vendorObj['shop_name']?.toString() ?? vendorObj['store_name']?.toString();
+    if (sn != null && sn.isNotEmpty) {
+      storeName = sn;
+    }
+
+    final addr = vendorObj['address']?.toString() ?? '';
+    final city = vendorObj['city']?.toString() ?? '';
+    final state = vendorObj['state']?.toString() ?? '';
+    if (addr.isNotEmpty) {
+      storeAddress = addr;
+    } else if (city.isNotEmpty || state.isNotEmpty) {
+      storeAddress = [city, state].where((s) => s.isNotEmpty).join(', ');
+    }
+  }
+
+  static Future<void> saveToPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (vendorName != null) await prefs.setString('vendorName', vendorName!);
+      if (vendorPhone != null) await prefs.setString('vendorPhone', vendorPhone!);
+      if (storeName != null) await prefs.setString('storeName', storeName!);
+      if (storeAddress != null) await prefs.setString('storeAddress', storeAddress!);
+      if (currentVendorEmail != null) await prefs.setString('currentVendorEmail', currentVendorEmail!);
+      if (currentVendorId != null) await prefs.setString('currentVendorId', currentVendorId!);
+    } catch (_) {}
+  }
+
+  static Future<void> loadFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      vendorName = prefs.getString('vendorName') ?? vendorName;
+      vendorPhone = prefs.getString('vendorPhone') ?? vendorPhone;
+      storeName = prefs.getString('storeName') ?? storeName;
+      storeAddress = prefs.getString('storeAddress') ?? storeAddress;
+      currentVendorEmail = prefs.getString('currentVendorEmail') ?? currentVendorEmail;
+      currentVendorId = prefs.getString('currentVendorId') ?? currentVendorId;
+    } catch (_) {}
+  }
+
+  static Future<Map<String, dynamic>> fetchVendorProfile() async {
+    await loadFromPrefs();
+    final profileEndpoints = [
+      if (currentVendorId != null && currentVendorId!.isNotEmpty) '$baseUrl/vendor?vendor_id=$currentVendorId',
+      if (currentVendorEmail != null && currentVendorEmail!.isNotEmpty) '$baseUrl/vendor?vendor_id=$currentVendorEmail',
+      '$baseUrl/vendor',
+      '$rootUrl/api/vendor',
+    ];
+
+    for (final url in profileEndpoints) {
+      try {
+        final response = await http.get(
+          Uri.parse(url),
+          headers: _buildHeaders(),
+        ).timeout(const Duration(seconds: 8));
+
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> body = jsonDecode(response.body);
+          final vendorObj = body['data'] ?? body['vendor'] ?? body;
+          if (vendorObj is Map<String, dynamic> && vendorObj.isNotEmpty) {
+            parseAndSaveVendorData(vendorObj);
+            await saveToPrefs();
+            print('SUCCESS: Vendor Profile fetched from $url -> ${vendorObj['full_name']} / ${vendorObj['shop_name']}');
+            return vendorObj;
+          }
+        }
+      } catch (e) {
+        print('fetchVendorProfile attempt to $url skipped: $e');
+      }
+    }
+    return {};
+  }
+
   // --------------------------------------------------------------
-  // 1. VENDOR LOGIN (POST https://vegimart-backend.vercel.app/vendor/login)
+  // 1. VENDOR LOGIN (POST)
   // --------------------------------------------------------------
   static final Map<String, List<ProductModel>> _vendorProductsMap = {};
 
@@ -44,16 +138,6 @@ class ApiService {
     final String rawEmail = email.trim();
     currentVendorEmail = rawEmail;
     currentVendorId = 'VENDOR_${rawEmail.hashCode.abs()}';
-
-    final String prefix = rawEmail.contains('@') ? rawEmail.split('@')[0] : rawEmail;
-    final String capitalized = prefix.isNotEmpty
-        ? prefix[0].toUpperCase() + prefix.substring(1)
-        : prefix;
-
-    vendorName = capitalized;
-    vendorPhone = rawEmail;
-    storeName = '$capitalized Veggie Mart';
-    storeAddress = 'Main Market, City';
 
     final loginEndpoints = [
       '$rootUrl/vendor/login',
@@ -80,17 +164,24 @@ class ApiService {
             authToken = token.toString();
             sessionCookie = 'authjs.session-token=$token';
             print('SUCCESS: Vendor Login Token received from $url');
-            return;
           }
+          final vendorObj = data['vendor'] ?? data['user'] ?? data['data'];
+          if (vendorObj is Map<String, dynamic>) {
+            parseAndSaveVendorData(vendorObj);
+            await saveToPrefs();
+          }
+          await fetchVendorProfile();
+          return;
         }
       } catch (e) {
         print('Login attempt to $url skipped/CORS: $e');
       }
     }
 
-    // Default Token assignment to guarantee login proceeds smoothly
+    // Default Token assignment & API profile fetch fallback
     authToken = 'vendor_token_${DateTime.now().millisecondsSinceEpoch}';
     sessionCookie = 'authjs.session-token=$authToken';
+    await fetchVendorProfile();
   }
 
   // --------------------------------------------------------------
