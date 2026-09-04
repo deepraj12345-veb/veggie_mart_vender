@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../consts/app_colors.dart';
 import '../main_nav_screen.dart';
 import '../../services/api_service.dart';
-import '../../providers/profile_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -37,35 +35,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       try {
         await ApiService.vendorLogin(email, password);
 
+        // Save auth state
         final prefs = await SharedPreferences.getInstance();
-        final String rawEmail = email.trim();
-        final String prefix = rawEmail.contains('@') ? rawEmail.split('@')[0] : rawEmail;
-        final String capitalized = prefix.isNotEmpty
-            ? prefix[0].toUpperCase() + prefix.substring(1)
-            : prefix;
-        
-        final String formattedVendorName = capitalized;
-        final String formattedStoreName = "$capitalized Veggie Mart";
-        
         await prefs.setBool('isVendorLoggedIn', true);
-        await prefs.setString('vendorName', formattedVendorName);
-        await prefs.setString('vendorPhone', rawEmail);
-        await prefs.setString('storeName', formattedStoreName);
-        await prefs.setString('vendorEmail', rawEmail);
-        
-        ApiService.vendorName = formattedVendorName;
-        ApiService.vendorPhone = rawEmail;
-        ApiService.storeName = formattedStoreName;
-        ApiService.currentVendorEmail = rawEmail;
-        ApiService.currentVendorId = 'VENDOR_${rawEmail.hashCode.abs()}';
-
-        // Update Riverpod ProfileNotifier immediately
-        ref.read(profileProvider.notifier).updateProfile(
-          vendorName: formattedVendorName,
-          phoneNumber: rawEmail,
-          storeName: formattedStoreName,
-        );
-
         if (ApiService.authToken != null) {
           await prefs.setString('vendorToken', ApiService.authToken!);
         }
@@ -145,7 +117,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               height: 260,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -157,7 +129,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primaryDark.withOpacity(0.06),
+                color: AppColors.primaryDark.withValues(alpha: 0.06),
               ),
             ),
           ),
@@ -183,7 +155,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.35),
+                            color: AppColors.primary.withValues(alpha: 0.35),
                             blurRadius: 24,
                             offset: const Offset(0, 10),
                           ),
@@ -223,7 +195,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withValues(alpha: 0.04),
                             blurRadius: 16,
                             offset: const Offset(0, 4),
                           ),
@@ -380,8 +352,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               gradient: _isLoading
                                   ? LinearGradient(
                                       colors: [
-                                        AppColors.primary.withOpacity(0.5),
-                                        AppColors.primaryDark.withOpacity(0.5),
+                                        AppColors.primary.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        AppColors.primaryDark.withValues(
+                                          alpha: 0.5,
+                                        ),
                                       ],
                                     )
                                   : const LinearGradient(
@@ -397,8 +373,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ? []
                                   : [
                                       BoxShadow(
-                                        color: AppColors.primary.withOpacity(
-                                          0.40,
+                                        color: AppColors.primary.withValues(
+                                          alpha: 0.40,
                                         ),
                                         blurRadius: 18,
                                         offset: const Offset(0, 8),

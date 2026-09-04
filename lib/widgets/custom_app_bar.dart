@@ -4,7 +4,6 @@ import '../consts/app_colors.dart';
 import '../consts/app_text_styles.dart';
 import '../providers/store_provider.dart';
 import '../providers/localization_provider.dart';
-import '../providers/profile_provider.dart';
 import '../screens/dashboard/notifications_screen.dart';
 
 class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -22,7 +21,6 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isStoreOpen = ref.watch(storeStatusProvider);
-    final profile = ref.watch(profileProvider);
     final tr = ref.watch(translationProvider);
 
     return AppBar(
@@ -46,24 +44,10 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  profile.storeName.isNotEmpty ? profile.storeName : title,
-                  style: AppTextStyles.heading1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  profile.vendorName.isNotEmpty ? profile.vendorName : "Vendor Profile",
-                  style: AppTextStyles.badgeText.copyWith(
-                    color: AppColors.primaryDark,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+            child: Text(
+              title,
+              style: AppTextStyles.heading1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -80,8 +64,8 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isStoreOpen
-                    ? AppColors.success.withOpacity(0.4)
-                    : AppColors.error.withOpacity(0.4),
+                    ? AppColors.success.withValues(alpha: 0.4)
+                    : AppColors.error.withValues(alpha: 0.4),
                 width: 1,
               ),
             ),
@@ -109,7 +93,9 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                       value: isStoreOpen,
                       activeThumbColor: AppColors.success,
                       inactiveThumbColor: AppColors.error,
-                      inactiveTrackColor: AppColors.error.withOpacity(0.3),
+                      inactiveTrackColor: AppColors.error.withValues(
+                        alpha: 0.3,
+                      ),
                       onChanged: (val) {
                         ref.read(storeStatusProvider.notifier).toggleStatus();
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -117,7 +103,9 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
                             content: Text(
                               val
                                   ? tr("🟢 Store is now ONLINE for new orders!")
-                                  : tr("🔴 Store is OFFLINE. No new orders will arrive."),
+                                  : tr(
+                                      "🔴 Store is OFFLINE. No new orders will arrive.",
+                                    ),
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: AppColors.white,
                               ),

@@ -153,7 +153,7 @@ class _ManageRidersScreenState extends ConsumerState<ManageRidersScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: isOnline ? Colors.green.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+                    backgroundColor: isOnline ? Colors.green.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
                     child: Icon(
                       Icons.motorcycle,
                       color: isOnline ? Colors.green : Colors.grey,

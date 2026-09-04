@@ -147,7 +147,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               height: 260,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -159,7 +159,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primaryDark.withOpacity(0.06),
+                color: AppColors.primaryDark.withValues(alpha: 0.06),
               ),
             ),
           ),
@@ -185,7 +185,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.07),
+                              color: Colors.black.withValues(alpha: 0.07),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -215,7 +215,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.35),
+                          color: AppColors.primary.withValues(alpha: 0.35),
                           blurRadius: 24,
                           offset: const Offset(0, 10),
                         ),
@@ -257,7 +257,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -305,7 +305,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                             color: AppColors.warningLight,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: AppColors.warning.withOpacity(0.3),
+                              color: AppColors.warning.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
@@ -383,8 +383,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                             gradient: _isVerifying
                                 ? LinearGradient(
                                     colors: [
-                                      AppColors.primary.withOpacity(0.5),
-                                      AppColors.primaryDark.withOpacity(0.5),
+                                      AppColors.primary.withValues(alpha: 0.5),
+                                      AppColors.primaryDark.withValues(alpha: 0.5),
                                     ],
                                   )
                                 : const LinearGradient(
@@ -400,8 +400,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                                 ? []
                                 : [
                                     BoxShadow(
-                                      color: AppColors.primary.withOpacity(
-                                        0.40,
+                                      color: AppColors.primary.withValues(
+                                        alpha: 0.40,
                                       ),
                                       blurRadius: 18,
                                       offset: const Offset(0, 8),

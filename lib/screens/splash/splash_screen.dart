@@ -39,13 +39,32 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Navigate directly to Login Screen on app launch
-    Timer(const Duration(milliseconds: 2500), () {
+    // Navigate to Login Screen after 2.5 seconds
+    Timer(const Duration(milliseconds: 2500), () async {
+      final prefs = await SharedPreferences.getInstance();
+      final isLoggedIn = prefs.getBool('isVendorLoggedIn') ?? false;
+
+      if (isLoggedIn) {
+        final token = prefs.getString('vendorToken');
+        if (token != null) {
+          ApiService.authToken = token;
+          final savedCookie = prefs.getString('sessionCookie');
+          if (savedCookie != null) {
+            ApiService.sessionCookie = savedCookie;
+          } else {
+            // Fallback for older sessions that didn't save the full cookie
+            ApiService.sessionCookie =
+                'authjs.session-token=$token; next-auth.session-token=$token';
+          }
+        }
+      }
+
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => const LoginScreen(),
+            builder: (context) =>
+                isLoggedIn ? const MainNavScreen() : const LoginScreen(),
           ),
         );
       }
@@ -89,7 +108,7 @@ class _SplashScreenState extends State<SplashScreen>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.35),
+                            color: AppColors.primary.withValues(alpha: 0.35),
                             blurRadius: 30,
                             offset: const Offset(0, 15),
                           ),

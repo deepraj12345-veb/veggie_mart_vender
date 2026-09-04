@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'api_client.dart';
 import '../models/product_model.dart';
 import '../models/order_model.dart';
 import '../models/rider_model.dart';
@@ -15,7 +16,7 @@ class ApiService {
   static String? storeName;
   static String? storeAddress;
 
-  static const String rootUrl = 'https://vegimart-backend.vercel.app';
+  static String get rootUrl => ApiClient.rootUrl;
   static String get baseUrl => '$rootUrl/api/v1';
   static String get vendorBaseUrl => '$rootUrl/api/vendor';
 

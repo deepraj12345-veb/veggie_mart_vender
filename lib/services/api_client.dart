@@ -26,7 +26,7 @@ class ApiClient {
 
 
   static const String prodBaseUrl =
-      'https://vegimart-backend.vercel.app/api/v1';
+      'http://localhost:3000/api/v1';
 
   /// Easily switch between [ApiEnvironment.local] and [ApiEnvironment.production]
   static ApiEnvironment environment = ApiEnvironment.local;
