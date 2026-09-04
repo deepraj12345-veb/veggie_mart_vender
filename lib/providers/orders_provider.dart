@@ -76,6 +76,7 @@ class OrdersNotifier extends AsyncNotifier<List<OrderModel>> {
   // Reject incoming new order
   Future<void> rejectOrder(String orderId) async {
     try {
+      await ApiService.updateOrderStatus(orderId, 'Cancelled');
       await ApiService.deleteOrder(orderId);
       if (state.value != null) {
         state = AsyncValue.data(
@@ -83,7 +84,7 @@ class OrdersNotifier extends AsyncNotifier<List<OrderModel>> {
         );
       }
     } catch (e) {
-      print('Error deleting order: $e');
+      print('Error rejecting order: $e');
       if (state.value != null) {
         state = AsyncValue.data(
           state.value!.where((order) => order.id != orderId).toList(),

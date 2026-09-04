@@ -7,6 +7,10 @@ import 'inventory/inventory_screen.dart';
 import 'wallet/wallet_screen.dart';
 import 'profile/profile_screen.dart';
 
+import '../models/order_model.dart';
+import '../providers/orders_provider.dart';
+import '../widgets/new_order_alert_modal.dart';
+
 class MainNavScreen extends ConsumerStatefulWidget {
   const MainNavScreen({super.key});
 
@@ -16,6 +20,8 @@ class MainNavScreen extends ConsumerStatefulWidget {
 
 class _MainNavScreenState extends ConsumerState<MainNavScreen> {
   int _currentIndex = 0;
+  final Set<String> _alertedOrderIds = {};
+  bool _isModalShowing = false;
 
   final List<Widget> _screens = const [
     OrdersDashboardScreen(),
@@ -24,9 +30,48 @@ class _MainNavScreenState extends ConsumerState<MainNavScreen> {
     ProfileScreen(),
   ];
 
+  void _checkAndShowNewOrderAlert(List<OrderModel> newOrders) {
+    if (newOrders.isEmpty || _isModalShowing) return;
+
+    final unalerted = newOrders.where((o) => !_alertedOrderIds.contains(o.id)).toList();
+    if (unalerted.isEmpty) return;
+
+    final targetOrder = unalerted.first;
+    _alertedOrderIds.add(targetOrder.id);
+    _isModalShowing = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      NewOrderAlertModal.show(
+        context,
+        order: targetOrder,
+        onAccept: () async {
+          _isModalShowing = false;
+          await ref.read(ordersProvider.notifier).acceptOrder(targetOrder.id);
+        },
+        onReject: () async {
+          _isModalShowing = false;
+          await ref.read(ordersProvider.notifier).rejectOrder(targetOrder.id);
+        },
+      ).then((_) {
+        _isModalShowing = false;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final tr = ref.watch(translationProvider);
+    final newOrders = ref.watch(newOrdersProvider);
+
+    // Trigger ringtone popup modal automatically for new incoming orders
+    ref.listen<List<OrderModel>>(newOrdersProvider, (previous, next) {
+      _checkAndShowNewOrderAlert(next);
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndShowNewOrderAlert(newOrders);
+    });
 
     return Scaffold(
       body: IndexedStack(
