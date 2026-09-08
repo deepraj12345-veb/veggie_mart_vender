@@ -11,6 +11,8 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+service-account.json
+**/service-account.json
 
 # IntelliJ related
 *.iml

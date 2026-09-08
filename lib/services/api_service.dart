@@ -66,23 +66,33 @@ class ApiService {
       currentVendorId = (vendorObj['id'] ?? vendorObj['_id']).toString();
     }
 
-    final fn = vendorObj['full_name']?.toString() ?? vendorObj['proprietor_name']?.toString() ?? vendorObj['name']?.toString();
+    final fn =
+        vendorObj['full_name']?.toString() ??
+        vendorObj['proprietor_name']?.toString() ??
+        vendorObj['name']?.toString();
     if (fn != null && fn.isNotEmpty) {
       vendorName = fn;
-    } else if (vendorObj['shop_name'] != null && vendorObj['shop_name'].toString().isNotEmpty) {
+    } else if (vendorObj['shop_name'] != null &&
+        vendorObj['shop_name'].toString().isNotEmpty) {
       vendorName = vendorObj['shop_name'].toString();
     }
 
-    if (vendorObj['email'] != null && vendorObj['email'].toString().isNotEmpty) {
+    if (vendorObj['email'] != null &&
+        vendorObj['email'].toString().isNotEmpty) {
       currentVendorEmail = vendorObj['email'].toString();
     }
 
-    final ph = vendorObj['mobile_number']?.toString() ?? vendorObj['mobile_no']?.toString() ?? vendorObj['phone']?.toString();
+    final ph =
+        vendorObj['mobile_number']?.toString() ??
+        vendorObj['mobile_no']?.toString() ??
+        vendorObj['phone']?.toString();
     if (ph != null && ph.isNotEmpty) {
       vendorPhone = ph;
     }
 
-    final sn = vendorObj['shop_name']?.toString() ?? vendorObj['store_name']?.toString();
+    final sn =
+        vendorObj['shop_name']?.toString() ??
+        vendorObj['store_name']?.toString();
     if (sn != null && sn.isNotEmpty) {
       storeName = sn;
     }
@@ -98,15 +108,19 @@ class ApiService {
     }
 
     if (vendorObj['wallet_balance'] != null) {
-      walletBalance = double.tryParse(vendorObj['wallet_balance'].toString()) ?? 0.0;
+      walletBalance =
+          double.tryParse(vendorObj['wallet_balance'].toString()) ?? 0.0;
     }
 
     if (vendorObj['is_verified'] != null) {
-      isVerified = vendorObj['is_verified'].toString() == '1' || vendorObj['is_verified'] == true;
+      isVerified =
+          vendorObj['is_verified'].toString() == '1' ||
+          vendorObj['is_verified'] == true;
     }
 
     if (vendorObj['created_at'] != null || vendorObj['createdAt'] != null) {
-      createdAt = (vendorObj['created_at'] ?? vendorObj['createdAt']).toString();
+      createdAt = (vendorObj['created_at'] ?? vendorObj['createdAt'])
+          .toString();
     }
   }
 
@@ -114,16 +128,21 @@ class ApiService {
     try {
       final prefs = await SharedPreferences.getInstance();
       if (vendorName != null) await prefs.setString('vendorName', vendorName!);
-      if (vendorPhone != null) await prefs.setString('vendorPhone', vendorPhone!);
+      if (vendorPhone != null)
+        await prefs.setString('vendorPhone', vendorPhone!);
       if (storeName != null) await prefs.setString('storeName', storeName!);
-      if (storeAddress != null) await prefs.setString('storeAddress', storeAddress!);
-      if (currentVendorEmail != null) await prefs.setString('currentVendorEmail', currentVendorEmail!);
-      if (currentVendorId != null) await prefs.setString('currentVendorId', currentVendorId!);
+      if (storeAddress != null)
+        await prefs.setString('storeAddress', storeAddress!);
+      if (currentVendorEmail != null)
+        await prefs.setString('currentVendorEmail', currentVendorEmail!);
+      if (currentVendorId != null)
+        await prefs.setString('currentVendorId', currentVendorId!);
       if (city.isNotEmpty) await prefs.setString('vendorCity', city);
       if (stateName.isNotEmpty) await prefs.setString('vendorState', stateName);
       await prefs.setDouble('vendorWallet', walletBalance);
       await prefs.setBool('vendorIsVerified', isVerified);
-      if (createdAt.isNotEmpty) await prefs.setString('vendorCreatedAt', createdAt);
+      if (createdAt.isNotEmpty)
+        await prefs.setString('vendorCreatedAt', createdAt);
     } catch (_) {}
   }
 
@@ -134,7 +153,8 @@ class ApiService {
       vendorPhone = prefs.getString('vendorPhone') ?? vendorPhone;
       storeName = prefs.getString('storeName') ?? storeName;
       storeAddress = prefs.getString('storeAddress') ?? storeAddress;
-      currentVendorEmail = prefs.getString('currentVendorEmail') ?? currentVendorEmail;
+      currentVendorEmail =
+          prefs.getString('currentVendorEmail') ?? currentVendorEmail;
       currentVendorId = prefs.getString('currentVendorId') ?? currentVendorId;
       city = prefs.getString('vendorCity') ?? city;
       stateName = prefs.getString('vendorState') ?? stateName;
@@ -147,18 +167,21 @@ class ApiService {
   static Future<Map<String, dynamic>> fetchVendorProfile() async {
     await loadFromPrefs();
     final profileEndpoints = [
-      if (currentVendorEmail != null && currentVendorEmail!.isNotEmpty) '$baseUrl/vendor?vendor_id=$currentVendorEmail',
-      if (currentVendorId != null && currentVendorId!.isNotEmpty && !currentVendorId!.startsWith('VENDOR_')) '$baseUrl/vendor?vendor_id=$currentVendorId',
+      if (currentVendorEmail != null && currentVendorEmail!.isNotEmpty)
+        '$baseUrl/vendor?vendor_id=$currentVendorEmail',
+      if (currentVendorId != null &&
+          currentVendorId!.isNotEmpty &&
+          !currentVendorId!.startsWith('VENDOR_'))
+        '$baseUrl/vendor?vendor_id=$currentVendorId',
       '$baseUrl/vendor',
       '$rootUrl/api/vendor',
     ];
 
     for (final url in profileEndpoints) {
       try {
-        final response = await http.get(
-          Uri.parse(url),
-          headers: _buildHeaders(),
-        ).timeout(const Duration(seconds: 8));
+        final response = await http
+            .get(Uri.parse(url), headers: _buildHeaders())
+            .timeout(const Duration(seconds: 8));
 
         if (response.statusCode == 200) {
           final Map<String, dynamic> body = jsonDecode(response.body);
@@ -166,7 +189,9 @@ class ApiService {
           if (vendorObj is Map<String, dynamic> && vendorObj.isNotEmpty) {
             parseAndSaveVendorData(vendorObj);
             await saveToPrefs();
-            print('SUCCESS: Real Vendor Profile fetched from $url -> Name: $vendorName, Shop: $storeName, Phone: $vendorPhone, Address: $storeAddress');
+            print(
+              'SUCCESS: Real Vendor Profile fetched from $url -> Name: $vendorName, Shop: $storeName, Phone: $vendorPhone, Address: $storeAddress',
+            );
             return vendorObj;
           }
         }
@@ -185,7 +210,7 @@ class ApiService {
   static Future<void> vendorLogin(String email, String password) async {
     print('--- 1. VENDOR LOGIN CALL ---');
     final String rawEmail = email.trim().toLowerCase();
-    
+
     // Clear old vendor data to ensure clean login for new account
     await clearAllVendorData();
     currentVendorEmail = rawEmail;
@@ -201,18 +226,24 @@ class ApiService {
 
     for (final url in loginEndpoints) {
       try {
-        final response = await http.post(
-          Uri.parse(url),
-          headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-          body: jsonEncode({
-            'email': rawEmail,
-            'password': password,
-          }),
-        ).timeout(const Duration(seconds: 8));
+        final response = await http
+            .post(
+              Uri.parse(url),
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: jsonEncode({'email': rawEmail, 'password': password}),
+            )
+            .timeout(const Duration(seconds: 8));
 
         if (response.statusCode == 200 || response.statusCode == 201) {
           final Map<String, dynamic> data = jsonDecode(response.body);
-          final token = data['token'] ?? data['accessToken'] ?? data['data']?['token'] ?? data['sessionToken'];
+          final token =
+              data['token'] ??
+              data['accessToken'] ??
+              data['data']?['token'] ??
+              data['sessionToken'];
           if (token != null) {
             authToken = token.toString();
             sessionCookie = 'authjs.session-token=$token';
@@ -260,22 +291,28 @@ class ApiService {
     }
 
     final dashboardUrls = [
-      Uri.parse('$baseUrl/vendor/dashboard').replace(queryParameters: queryParams).toString(),
-      Uri.parse('$rootUrl/vendor/dashboard').replace(queryParameters: queryParams).toString(),
-      Uri.parse('$vendorBaseUrl/dashboard').replace(queryParameters: queryParams).toString(),
+      Uri.parse(
+        '$baseUrl/vendor/dashboard',
+      ).replace(queryParameters: queryParams).toString(),
+      Uri.parse(
+        '$rootUrl/vendor/dashboard',
+      ).replace(queryParameters: queryParams).toString(),
+      Uri.parse(
+        '$vendorBaseUrl/dashboard',
+      ).replace(queryParameters: queryParams).toString(),
     ];
 
     for (final url in dashboardUrls) {
       try {
-        final response = await http.get(
-          Uri.parse(url),
-          headers: _buildHeaders(),
-        ).timeout(const Duration(seconds: 8));
+        final response = await http
+            .get(Uri.parse(url), headers: _buildHeaders())
+            .timeout(const Duration(seconds: 8));
 
         if (response.statusCode == 200) {
           final Map<String, dynamic> data = jsonDecode(response.body);
           final Map<String, dynamic> innerData = data['data'] ?? data;
-          if (innerData['vendor'] != null && innerData['vendor'] is Map<String, dynamic>) {
+          if (innerData['vendor'] != null &&
+              innerData['vendor'] is Map<String, dynamic>) {
             parseAndSaveVendorData(innerData['vendor']);
             await saveToPrefs();
           }
@@ -301,10 +338,9 @@ class ApiService {
   // --------------------------------------------------------------
   static Future<Map<String, dynamic>> fetchVendorApiData() async {
     try {
-      final response = await http.get(
-        Uri.parse(vendorBaseUrl),
-        headers: _buildHeaders(),
-      ).timeout(const Duration(seconds: 8));
+      final response = await http
+          .get(Uri.parse(vendorBaseUrl), headers: _buildHeaders())
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
@@ -322,53 +358,91 @@ class ApiService {
   // --------------------------------------------------------------
   static Future<List<ProductModel>> fetchProducts({String search = ''}) async {
     await loadFromPrefs();
+
+    final isValidVendorId = currentVendorId != null &&
+        currentVendorId!.isNotEmpty &&
+        RegExp(r'^[0-9a-fA-F]{24}$').hasMatch(currentVendorId!);
+
     final Map<String, String> queryParams = {
       if (search.isNotEmpty) 'search': search,
       'limit': '100',
+      if (isValidVendorId) 'vendor_id': currentVendorId!,
     };
-    if (currentVendorEmail != null && currentVendorEmail!.isNotEmpty) {
-      queryParams['vendor_id'] = currentVendorEmail!;
-    } else if (currentVendorId != null && currentVendorId!.isNotEmpty) {
-      queryParams['vendor_id'] = currentVendorId!;
-    }
 
     final basePaths = [baseUrl, vendorBaseUrl];
     for (final basePath in basePaths) {
       try {
-        final uri = Uri.parse('$basePath/products').replace(
-          queryParameters: queryParams,
-        );
+        final uri = Uri.parse(
+          '$basePath/products',
+        ).replace(queryParameters: queryParams);
 
-        final response = await http.get(uri, headers: _buildHeaders()).timeout(const Duration(seconds: 8));
+        final response = await http
+            .get(uri, headers: _buildHeaders())
+            .timeout(const Duration(seconds: 8));
 
         if (response.statusCode == 200) {
           final Map<String, dynamic> data = json.decode(response.body);
-          final List<dynamic> items = data['data'] ?? (data is List ? data : []);
-          final allProducts = items.map((json) => ProductModel.fromJson(json)).toList();
-          return allProducts;
+          final List<dynamic> items =
+              data['data'] ?? (data is List ? data : []);
+          final allProducts = items
+              .map((json) => ProductModel.fromJson(json))
+              .toList();
+          if (allProducts.isNotEmpty) {
+            return allProducts;
+          }
         }
       } catch (e) {
         print('fetchProducts attempt to $basePath/products skipped: $e');
       }
     }
 
-    return [];
+    // Fallback 1: Query full product catalog without vendor_id filter
+    try {
+      final fallbackUri = Uri.parse('$baseUrl/products').replace(
+        queryParameters: {
+          if (search.isNotEmpty) 'search': search,
+          'limit': '100',
+        },
+      );
+      final response = await http
+          .get(fallbackUri, headers: _buildHeaders())
+          .timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> items = data['data'] ?? (data is List ? data : []);
+        final allProducts = items
+            .map((json) => ProductModel.fromJson(json))
+            .toList();
+        if (allProducts.isNotEmpty) {
+          return allProducts;
+        }
+      }
+    } catch (e) {
+      print('fetchProducts fallback attempt skipped: $e');
+    }
+
+    return _fallbackProducts;
   }
 
   static Future<ProductModel> createProduct(ProductModel product) async {
     final emailKey = currentVendorEmail ?? 'default';
     final productWithVendor = product.copyWith(
-      id: product.id.isEmpty ? 'P-${DateTime.now().millisecondsSinceEpoch}' : product.id,
+      id: product.id.isEmpty
+          ? 'P-${DateTime.now().millisecondsSinceEpoch}'
+          : product.id,
       vendorId: currentVendorId,
       vendorShopName: storeName ?? vendorName,
     );
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/products'),
-        headers: _buildHeaders(),
-        body: json.encode(productWithVendor.toJson()),
-      ).timeout(const Duration(seconds: 8));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/products'),
+            headers: _buildHeaders(),
+            body: json.encode(productWithVendor.toJson()),
+          )
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -384,13 +458,18 @@ class ApiService {
     return productWithVendor;
   }
 
-  static Future<void> updateProduct(String productId, Map<String, dynamic> data) async {
+  static Future<void> updateProduct(
+    String productId,
+    Map<String, dynamic> data,
+  ) async {
     try {
-      await http.patch(
-        Uri.parse('$baseUrl/products/$productId'),
-        headers: _buildHeaders(),
-        body: json.encode(data),
-      ).timeout(const Duration(seconds: 8));
+      await http
+          .patch(
+            Uri.parse('$baseUrl/products/$productId'),
+            headers: _buildHeaders(),
+            body: json.encode(data),
+          )
+          .timeout(const Duration(seconds: 8));
     } catch (e) {
       print('updateProduct API error: $e');
     }
@@ -398,10 +477,12 @@ class ApiService {
 
   static Future<void> deleteProduct(String productId) async {
     try {
-      await http.delete(
-        Uri.parse('$baseUrl/products/$productId'),
-        headers: _buildHeaders(),
-      ).timeout(const Duration(seconds: 8));
+      await http
+          .delete(
+            Uri.parse('$baseUrl/products/$productId'),
+            headers: _buildHeaders(),
+          )
+          .timeout(const Duration(seconds: 8));
     } catch (e) {
       print('deleteProduct API error: $e');
     }
@@ -409,15 +490,19 @@ class ApiService {
 
   static Future<List<String>> fetchCategories() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/categories'),
-        headers: _buildHeaders(),
-      ).timeout(const Duration(seconds: 8));
+      final response = await http
+          .get(Uri.parse('$baseUrl/categories'), headers: _buildHeaders())
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> items = data['data'] ?? [];
-        return items.map((e) => (e is Map ? (e['name'] ?? e['category_name']) : e).toString()).toList();
+        return items
+            .map(
+              (e) =>
+                  (e is Map ? (e['name'] ?? e['category_name']) : e).toString(),
+            )
+            .toList();
       }
     } catch (e) {
       print('fetchCategories API error: $e');
@@ -425,7 +510,10 @@ class ApiService {
     return ['Vegetables', 'Fruits', 'Exotic', 'Herbs & Seasoning'];
   }
 
-  static Future<List<OrderModel>> fetchOrders({int page = 1, int limit = 50}) async {
+  static Future<List<OrderModel>> fetchOrders({
+    int page = 1,
+    int limit = 50,
+  }) async {
     await loadFromPrefs();
     try {
       final Map<String, String> queryParams = {};
@@ -435,12 +523,13 @@ class ApiService {
         queryParams['vendor_id'] = currentVendorId!;
       }
 
-      final uri = Uri.parse('$baseUrl/orders').replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        '$baseUrl/orders',
+      ).replace(queryParameters: queryParams);
 
-      final response = await http.get(
-        uri,
-        headers: _buildHeaders(),
-      ).timeout(const Duration(seconds: 8));
+      final response = await http
+          .get(uri, headers: _buildHeaders())
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -470,10 +559,16 @@ class ApiService {
     int statusInt = status is int
         ? status
         : (status == 'Order Placed'
-            ? 0
-            : (status == 'Packing' || status == 'Preparing' || status == 'Accepted'
-                ? 1
-                : (status == 'Ready' ? 2 : (status == 'Delivered' || status == 'Completed' ? 4 : 0))));
+              ? 0
+              : (status == 'Packing' ||
+                        status == 'Preparing' ||
+                        status == 'Accepted'
+                    ? 1
+                    : (status == 'Ready'
+                          ? 2
+                          : (status == 'Delivered' || status == 'Completed'
+                                ? 4
+                                : 0))));
 
     final cleanId = orderId.replaceAll('#', '');
 
@@ -486,18 +581,22 @@ class ApiService {
 
     for (final url in statusEndpoints) {
       try {
-        final response = await http.patch(
-          Uri.parse(url),
-          headers: _buildHeaders(),
-          body: json.encode({
-            'status': statusInt,
-            'orderStatus': statusStr,
-            'isAdmin': true,
-          }),
-        ).timeout(const Duration(seconds: 8));
+        final response = await http
+            .patch(
+              Uri.parse(url),
+              headers: _buildHeaders(),
+              body: json.encode({
+                'status': statusInt,
+                'orderStatus': statusStr,
+                'isAdmin': true,
+              }),
+            )
+            .timeout(const Duration(seconds: 8));
 
         if (response.statusCode == 200 || response.statusCode == 201) {
-          print('SUCCESS: Updated order $orderId status to $statusStr ($statusInt) via $url');
+          print(
+            'SUCCESS: Updated order $orderId status to $statusStr ($statusInt) via $url',
+          );
           return;
         }
       } catch (e) {
@@ -508,21 +607,26 @@ class ApiService {
 
   static Future<void> deleteOrder(String orderId) async {
     try {
-      await http.delete(
-        Uri.parse('$baseUrl/orders/$orderId'),
-        headers: _buildHeaders(),
-      ).timeout(const Duration(seconds: 8));
+      await http
+          .delete(
+            Uri.parse('$baseUrl/orders/$orderId'),
+            headers: _buildHeaders(),
+          )
+          .timeout(const Duration(seconds: 8));
     } catch (e) {
       print('deleteOrder API error: $e');
     }
   }
 
-  static Future<List<RiderModel>> fetchRiders({int page = 1, int limit = 50, String search = ''}) async {
+  static Future<List<RiderModel>> fetchRiders({
+    int page = 1,
+    int limit = 50,
+    String search = '',
+  }) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/delivery-boys'),
-        headers: _buildHeaders(),
-      ).timeout(const Duration(seconds: 8));
+      final response = await http
+          .get(Uri.parse('$baseUrl/delivery-boys'), headers: _buildHeaders())
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -537,11 +641,13 @@ class ApiService {
 
   static Future<RiderModel> addRider(RiderModel rider, String password) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/delivery-boys'),
-        headers: _buildHeaders(),
-        body: json.encode({...rider.toJson(), 'password': password}),
-      ).timeout(const Duration(seconds: 8));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/delivery-boys'),
+            headers: _buildHeaders(),
+            body: json.encode({...rider.toJson(), 'password': password}),
+          )
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -556,11 +662,13 @@ class ApiService {
 
   static Future<void> updateRiderStatus(String riderId, String isActive) async {
     try {
-      await http.patch(
-        Uri.parse('$baseUrl/delivery-boys/$riderId'),
-        headers: _buildHeaders(),
-        body: json.encode({'is_active': isActive}),
-      ).timeout(const Duration(seconds: 8));
+      await http
+          .patch(
+            Uri.parse('$baseUrl/delivery-boys/$riderId'),
+            headers: _buildHeaders(),
+            body: json.encode({'is_active': isActive}),
+          )
+          .timeout(const Duration(seconds: 8));
     } catch (e) {
       print('updateRiderStatus API error: $e');
     }
@@ -568,10 +676,12 @@ class ApiService {
 
   static Future<void> deleteRider(String riderId) async {
     try {
-      await http.delete(
-        Uri.parse('$baseUrl/delivery-boys/$riderId'),
-        headers: _buildHeaders(),
-      ).timeout(const Duration(seconds: 8));
+      await http
+          .delete(
+            Uri.parse('$baseUrl/delivery-boys/$riderId'),
+            headers: _buildHeaders(),
+          )
+          .timeout(const Duration(seconds: 8));
     } catch (e) {
       print('deleteRider API error: $e');
     }
@@ -579,11 +689,13 @@ class ApiService {
 
   static Future<void> assignRider(String orderId, String riderId) async {
     try {
-      await http.post(
-        Uri.parse('$baseUrl/orders/$orderId/assign'),
-        headers: _buildHeaders(),
-        body: json.encode({'rider_id': riderId}),
-      ).timeout(const Duration(seconds: 8));
+      await http
+          .post(
+            Uri.parse('$baseUrl/orders/$orderId/assign'),
+            headers: _buildHeaders(),
+            body: json.encode({'rider_id': riderId}),
+          )
+          .timeout(const Duration(seconds: 8));
     } catch (e) {
       print('assignRider API error: $e');
     }
@@ -596,7 +708,8 @@ class ApiService {
       category: 'Vegetables',
       price: 40.0,
       unit: '1 Kg',
-      imageUrl: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400',
+      imageUrl:
+          'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400',
       inStock: true,
     ),
     const ProductModel(
@@ -605,7 +718,48 @@ class ApiService {
       category: 'Vegetables',
       price: 50.0,
       unit: '1 Kg',
-      imageUrl: 'https://images.unsplash.com/photo-1598170845058-12ef4a457939?w=400',
+      imageUrl:
+          'https://images.unsplash.com/photo-1598170845058-12ef4a457939?w=400',
+      inStock: true,
+    ),
+    const ProductModel(
+      id: 'P-103',
+      name: 'Onion (Dungdi / Pyaz)',
+      category: 'Vegetables',
+      price: 35.0,
+      unit: '1 Kg',
+      imageUrl:
+          'https://res.cloudinary.com/df7gwzlj0/image/upload/v1785934193/vegimart_products/hki8xyupw9osvax77ute.jpg',
+      inStock: true,
+    ),
+    const ProductModel(
+      id: 'P-104',
+      name: 'Green Cucumber (Kakdi)',
+      category: 'Vegetables',
+      price: 30.0,
+      unit: '500 g',
+      imageUrl:
+          'https://res.cloudinary.com/df7gwzlj0/image/upload/v1785934194/vegimart_products/d0yt5vbfvzssgh9b3c64.jpg',
+      inStock: true,
+    ),
+    const ProductModel(
+      id: 'P-105',
+      name: 'Banana (Kela)',
+      category: 'Fruits',
+      price: 48.0,
+      unit: '1 Dozen',
+      imageUrl:
+          'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=500',
+      inStock: true,
+    ),
+    const ProductModel(
+      id: 'P-106',
+      name: 'Broccoli',
+      category: 'Exotic Vegetables',
+      price: 60.0,
+      unit: '500 g',
+      imageUrl:
+          'https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=500',
       inStock: true,
     ),
   ];
@@ -617,7 +771,11 @@ class ApiService {
       customerPhone: '+91 9876543210',
       dateTime: '10 mins ago',
       items: [
-        OrderItem(name: 'Fresh Tamatar (Tomato)', quantity: '2 Kg', price: 80.0),
+        OrderItem(
+          name: 'Fresh Tamatar (Tomato)',
+          quantity: '2 Kg',
+          price: 80.0,
+        ),
       ],
       totalAmount: 80.0,
       status: OrderStatus.newOrder,

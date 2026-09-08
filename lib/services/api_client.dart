@@ -14,17 +14,31 @@ class ApiClient {
 
   late final Dio _dio;
 
-  static String get localBaseUrl => 'http://localhost:3000/api/v1';
+  static String _normalizeUrl(String rawUrl) {
+    String url = rawUrl.trim();
+    if (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    if (url.endsWith('/partner')) {
+      url = url.substring(0, url.length - '/partner'.length);
+    }
+    if (!url.endsWith('/api/v1')) {
+      url = '$url/api/v1';
+    }
+    return url;
+  }
 
-  static const String prodBaseUrl = 'http://localhost:3000/api/v1';
+  static String get localBaseUrl => 'https://vegimart-backend.vercel.app/api/v1';
+
+  static const String prodBaseUrl = 'https://vegimart-backend.vercel.app/api/v1';
 
   /// Easily switch between [ApiEnvironment.local] and [ApiEnvironment.production]
-  static ApiEnvironment environment = ApiEnvironment.local;
+  static ApiEnvironment environment = ApiEnvironment.production;
 
   static String? _customBaseUrl;
 
   static String get baseUrl {
-    if (_customBaseUrl != null) return _customBaseUrl!;
+    if (_customBaseUrl != null) return _normalizeUrl(_customBaseUrl!);
     return environment == ApiEnvironment.local ? localBaseUrl : prodBaseUrl;
   }
 
