@@ -4,11 +4,7 @@ import 'consts/app_theme.dart';
 import 'screens/splash/splash_screen.dart';
 
 void main() {
-  runApp(
-    const ProviderScope(
-      child: VegKingVendorApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: VegKingVendorApp()));
 }
 
 class VegKingVendorApp extends StatelessWidget {
